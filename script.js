@@ -2,7 +2,7 @@
  * ==== การเชื่อมต่อ GOOGLE SHEETS ====
  * ให้คุณใส่ URL ของ Web App จาก Google Apps Script ตรงนี้
  */
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo_H47zLlED0QoCcM6OLM5PLG6EGRozcWiLjJWn8iwGJ5ayZhJrW6AQQtReed7R_Pv/exec';
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw68A2PsALFfdpSvnVTDMm7GQNJ8A0y9gSFZ11CwGMbPqRMYiIcBLSK1jMbV9UdDmbZ/exec';
 
 
 // ตัวแปรเก็บข้อมูลทั้งหมดจาก Google Sheets
@@ -11,6 +11,12 @@ let currentFilteredData = [];
 // ตัวแปรเก็บกราฟ
 let donutChart;
 let barChart;
+
+// Thai month mapping for sorting and comparison
+const monthMap = {
+    'ม.ค.': 1, 'ก.พ.': 2, 'มี.ค.': 3, 'เม.ย.': 4, 'พ.ค.': 5, 'มิ.ย.': 6,
+    'ก.ค.': 7, 'ส.ค.': 8, 'ก.ย.': 9, 'ต.ค.': 10, 'พ.ย.': 11, 'ธ.ค.': 12
+};
 
 // Format numbers as Thai Baht currency
 const formatCurrency = (number) => {
@@ -110,6 +116,14 @@ const setupEventListeners = () => {
     monthFilter.addEventListener('change', updateDashboard);
     yearFilter.addEventListener('change', updateDashboard);
 
+    // PayDoc date section filters (independent)
+    const payDocStatusFilter = document.getElementById('payDocStatusFilter');
+    const payDocMonthFilter = document.getElementById('payDocMonthFilter');
+    const payDocYearFilter = document.getElementById('payDocYearFilter');
+    if (payDocStatusFilter) payDocStatusFilter.addEventListener('change', updateDateSummary);
+    if (payDocMonthFilter) payDocMonthFilter.addEventListener('change', updateDateSummary);
+    if (payDocYearFilter) payDocYearFilter.addEventListener('change', updateDateSummary);
+
     refreshBtn.addEventListener('click', async () => {
         if (GOOGLE_APP_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
             alert('กรุณาใส่ Web App URL ของคุณในไฟล์ script.js ก่อนครับ');
@@ -134,6 +148,16 @@ const setupEventListeners = () => {
     closeDetailsBtn.addEventListener('click', () => detailsModal.classList.add('hidden'));
     closeDetailsModalBtn.addEventListener('click', () => detailsModal.classList.add('hidden'));
 
+    // Date Detail Modal Setup
+    const dateDetailModal = document.getElementById('dateDetailModal');
+    const closeDateDetailBtn = document.querySelector('.close-date-detail-btn');
+    const closeDateDetailModalBtn = document.getElementById('closeDateDetailModalBtn');
+    const exportDatePdfBtn = document.getElementById('exportDatePdfBtn');
+
+    if (closeDateDetailBtn) closeDateDetailBtn.addEventListener('click', () => dateDetailModal.classList.add('hidden'));
+    if (closeDateDetailModalBtn) closeDateDetailModalBtn.addEventListener('click', () => dateDetailModal.classList.add('hidden'));
+    if (exportDatePdfBtn) exportDatePdfBtn.addEventListener('click', exportDatePDF);
+
     // PDF Export
     if (exportPdfBtn) {
         exportPdfBtn.addEventListener('click', exportToPDF);
@@ -150,6 +174,7 @@ const setupEventListeners = () => {
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.classList.add('hidden');
         if (e.target === detailsModal) detailsModal.classList.add('hidden');
+        if (e.target === dateDetailModal) dateDetailModal.classList.add('hidden');
     });
 
 };
@@ -173,25 +198,40 @@ const openDetailsModal = (type) => {
     const config = statusMap[type];
     if (!config) return;
 
-    const titleText = `ประเภทรายงาน: ${config.text}`;
-    detailsModalTitle.innerText = titleText;
-
-    // ตั้งค่าสำหรับหัวข้อที่จะพิมพ์ใน PDF (แยกจากหน้าจอ)
-    const printHeader = document.getElementById('printReportHeader');
-    if (printHeader) printHeader.innerText = titleText;
-
     // Filter and sort data based on current context
     const items = currentFilteredData.filter(item => {
         const s = (item.status || '').toString().trim();
+        // ต้องแยก 'เกินกำหนด' ออกจาก 'เกินกำหนด (รอพิจารณา)' เพื่อให้ยอดตรงกับ Card หน้าหลัก
+        if (type === 'overdue') {
+            return s.includes('เกินกำหนด') && !s.includes('(รอพิจารณา)');
+        }
         return s.includes(config.key);
-    }).sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
+    }).sort((a, b) => {
+        // First sort by date (ascending)
+        const yearA = parseInt(a.yearDue) || 9999;
+        const yearB = parseInt(b.yearDue) || 9999;
+        if (yearA !== yearB) return yearA - yearB;
+
+        const monthA = monthMap[a.monthDue] || 99;
+        const monthB = monthMap[b.monthDue] || 99;
+        if (monthA !== monthB) return monthA - monthB;
+
+        const dayA = parseInt(a.dayDue) || 99;
+        const dayB = parseInt(b.dayDue) || 99;
+        if (dayA !== dayB) return dayA - dayB;
+
+        // If date is equal, sort by amount (descending)
+        return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+    });
 
     detailsTableBody.innerHTML = '';
+    const detailsTableFooter = document.getElementById('detailsTableFooter');
+    detailsTableFooter.innerHTML = ''; // Clear previous
 
+    let totalSum = 0;
     if (items.length === 0) {
         detailsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับตัวกรองนี้</td></tr>`;
     } else {
-        let totalSum = 0;
         items.forEach(item => {
             const amount = Number(item.amount) || 0;
             totalSum += amount;
@@ -208,19 +248,23 @@ const openDetailsModal = (type) => {
             `;
             detailsTableBody.appendChild(tr);
         });
-
-        // Add Total Summary Row to tfoot
-        const detailsTableFooter = document.getElementById('detailsTableFooter');
-        detailsTableFooter.innerHTML = ''; // Clear previous
-
-        const totalTr = document.createElement('tr');
-        totalTr.className = 'total-row-summary';
-        totalTr.innerHTML = `
-            <td colspan="5" class="total-label">ยอดรวมทั้งหมด (Total):</td>
-            <td class="total-amount-val">${formatCurrency(totalSum)}</td>
-        `;
-        detailsTableFooter.appendChild(totalTr);
     }
+
+    // Add Total Summary Row to tfoot
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-row-summary';
+    totalTr.innerHTML = `
+        <td colspan="5" class="total-label">ยอดรวมทั้งหมด (Total):</td>
+        <td class="total-amount-val">${formatCurrency(totalSum)}</td>
+    `;
+    detailsTableFooter.appendChild(totalTr);
+
+    // Update Title with Total Sum for immediate clarity (modal shows total,
+    // but the print header should not include the total amount)
+    const finalTitle = `ประเภทรายงาน: ${config.text} (ยอดรวมทั้งหมด: ${formatCurrency(totalSum)})`;
+    detailsModalTitle.innerText = finalTitle;
+    const printHeader = document.getElementById('printReportHeader');
+    if (printHeader) printHeader.innerText = `ประเภทรายงาน: ${config.text}`;
 
     detailsModal.classList.remove('hidden');
 };
@@ -546,6 +590,9 @@ const updateDashboard = () => {
     barChart.data.datasets[0].data = sortedCreditors.map(item => item[1].amount);
     barChart.data.datasets[0].statusData = sortedCreditors.map(item => Array.from(item[1].statuses).join(', '));
     barChart.update();
+
+    // Update Date Summary Section
+    updateDateSummary();
 };
 
 // ==========================================
@@ -566,6 +613,217 @@ const loadMockData = () => {
         loading.classList.add('hidden');
         updateDashboard();
     }, 1000);
+};
+
+// ==========================================
+// DATE SUMMARY - รวมจำนวนเงินตามวันที่ทำเอกสารจ่าย (คอลัมน์ H)
+// ==========================================
+const updateDateSummary = () => {
+    const grid = document.getElementById('dateSummaryGrid');
+    if (!grid) return;
+
+    // Read section-specific filters
+    const payDocStatusVal = document.getElementById('payDocStatusFilter')?.value || 'รอโอน';
+    const payDocMonthVal = document.getElementById('payDocMonthFilter')?.value || 'all';
+    const payDocYearVal = document.getElementById('payDocYearFilter')?.value || 'all';
+
+    // Filter from ALL data (independent from top filters) by paymentStatus + payDoc month/year
+    const filteredForPayDoc = allData.filter(item => {
+        const matchStatus = payDocStatusVal === 'all' || (item.paymentStatus && item.paymentStatus.toString().includes(payDocStatusVal));
+        const matchMonth = payDocMonthVal === 'all' || (item.payDocMonth && item.payDocMonth === payDocMonthVal);
+        const matchYear = payDocYearVal === 'all' || (item.payDocYear && parseInt(item.payDocYear) === parseInt(payDocYearVal));
+        return matchStatus && matchMonth && matchYear;
+    });
+
+    // Group data by payDoc date (column H)
+    const dateGroups = {};
+    filteredForPayDoc.forEach(item => {
+        const day = item.payDocDay || '';
+        const month = item.payDocMonth || '';
+        const year = item.payDocYear || '';
+        const dateKey = [day, month, year].filter(Boolean).join(' ') || 'ไม่ระบุวันที่';
+
+        if (!dateGroups[dateKey]) {
+            dateGroups[dateKey] = {
+                items: [],
+                total: 0,
+                day: parseInt(day) || 0,
+                monthNum: monthMap[month] || 0,
+                year: parseInt(year) || 0,
+                statuses: new Set()
+            };
+        }
+        const amount = Number(item.amount) || 0;
+        dateGroups[dateKey].items.push(item);
+        dateGroups[dateKey].total += amount;
+
+        // Track statuses
+        const statusStr = (item.status || '').toString().trim();
+        if (statusStr.includes('เกินกำหนด (รอพิจารณา)')) dateGroups[dateKey].statuses.add('pending');
+        else if (statusStr.includes('เกินกำหนด')) dateGroups[dateKey].statuses.add('overdue');
+        else if (statusStr.includes('ตรงดิว')) dateGroups[dateKey].statuses.add('ontime');
+        else if (statusStr.includes('ยังไม่ถึงกำหนด')) dateGroups[dateKey].statuses.add('notdue');
+        else if (statusStr.includes('ยังไม่กำหนดวันจ่าย')) dateGroups[dateKey].statuses.add('nodate');
+        else if (statusStr.includes('จ่ายก่อนกำหนด')) dateGroups[dateKey].statuses.add('early');
+    });
+
+    // Sort by date
+    const sortedDates = Object.entries(dateGroups).sort((a, b) => {
+        const da = a[1], db = b[1];
+        if (da.year !== db.year) return da.year - db.year;
+        if (da.monthNum !== db.monthNum) return da.monthNum - db.monthNum;
+        return da.day - db.day;
+    });
+
+    // Render cards
+    grid.innerHTML = '';
+
+    if (sortedDates.length === 0) {
+        grid.innerHTML = `
+            <div class="date-summary-empty">
+                <i class='bx bx-calendar-x'></i>
+                <p>ไม่มีข้อมูลสำหรับตัวกรองที่เลือก</p>
+            </div>`;
+        return;
+    }
+
+    sortedDates.forEach(([dateKey, group], index) => {
+        const statusBadgesHtml = Array.from(group.statuses).map(s => {
+            const labels = {
+                'overdue': 'เกินกำหนด',
+                'ontime': 'ตรงดิว',
+                'notdue': 'ยังไม่ถึง',
+                'pending': 'รอพิจารณา',
+                'nodate': 'ไม่กำหนด',
+                'early': 'ก่อนกำหนด'
+            };
+            return `<span class="date-status-mini ${s}">${labels[s] || s}</span>`;
+        }).join('');
+
+        const card = document.createElement('div');
+        card.className = 'date-card';
+        card.style.animationDelay = `${index * 0.06}s`;
+        card.innerHTML = `
+            <div class="date-card-top">
+                <div class="date-card-date">
+                    <div class="date-icon"><i class='bx bx-calendar'></i></div>
+                    <div class="date-text">
+                        <span class="day-label">${dateKey}</span>
+                        <span class="item-count">${group.items.length} รายการ</span>
+                    </div>
+                </div>
+                <div class="date-card-amount">${formatCurrency(group.total)}</div>
+            </div>
+            <div class="date-status-badges">${statusBadgesHtml}</div>
+            <div class="date-card-actions">
+                <button class="date-action-view" data-date-key="${dateKey}">
+                    <i class='bx bx-show'></i> ดูข้อมูลเพิ่มเติม
+                </button>
+                <button class="date-action-pay" data-date-key="${dateKey}">
+                    <i class='bx bx-file'></i> ทำเอกสารจ่าย
+                </button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+
+    // Attach event listeners to the new buttons
+    grid.querySelectorAll('.date-action-view').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const dateKey = btn.getAttribute('data-date-key');
+            openDateDetailModal(dateKey);
+        });
+    });
+
+    grid.querySelectorAll('.date-action-pay').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const dateKey = btn.getAttribute('data-date-key');
+            openDateDetailModal(dateKey);
+        });
+    });
+};
+
+// Open date detail modal and optionally trigger PDF export
+const openDateDetailModal = (dateKey) => {
+    const modal = document.getElementById('dateDetailModal');
+    const title = document.getElementById('dateDetailModalTitle');
+    const tbody = document.getElementById('dateDetailTableBody');
+    const tfoot = document.getElementById('dateDetailTableFooter');
+    // Find matching items by payDoc date (column H) + status filter
+    const payDocStatusVal = document.getElementById('payDocStatusFilter')?.value || 'รอโอน';
+    const items = allData.filter(item => {
+        const matchStatus = payDocStatusVal === 'all' || (item.paymentStatus && item.paymentStatus.toString().includes(payDocStatusVal));
+        const day = item.payDocDay || '';
+        const month = item.payDocMonth || '';
+        const year = item.payDocYear || '';
+        const itemDateKey = [day, month, year].filter(Boolean).join(' ') || 'ไม่ระบุวันที่';
+        return matchStatus && itemDateKey === dateKey;
+    }).sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
+
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+
+    let totalSum = 0;
+
+    if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับวันที่นี้</td></tr>`;
+    } else {
+        items.forEach(item => {
+            const amount = Number(item.amount) || 0;
+            totalSum += amount;
+
+            const statusStr = (item.status || '').toString().trim();
+            let statusColor = 'var(--text-muted)';
+            if (statusStr.includes('เกินกำหนด')) statusColor = '#ef4444';
+            else if (statusStr.includes('ตรงดิว')) statusColor = '#10b981';
+            else if (statusStr.includes('ยังไม่ถึงกำหนด')) statusColor = '#3b82f6';
+            else if (statusStr.includes('จ่ายก่อนกำหนด')) statusColor = '#a855f7';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 500; color: var(--accent-primary); font-family: monospace;">${item.docNo || '-'}</td>
+                <td style="font-weight: 500;">${item.creditor || '-'}</td>
+                <td style="color: var(--text-muted);">${item.description || '-'}</td>
+                <td><span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span></td>
+                <td style="white-space: nowrap;"><span style="color: ${statusColor}; font-size: 12px; font-weight: 500;">${statusStr || '-'}</span></td>
+                <td style="text-align: right; color: var(--color-total); font-weight: 600; white-space: nowrap;">${formatCurrency(amount)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Total footer
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-row-summary';
+    totalTr.innerHTML = `
+        <td colspan="5" class="total-label">ยอดรวมทั้งหมด (Total):</td>
+        <td class="total-amount-val">${formatCurrency(totalSum)}</td>
+    `;
+    tfoot.appendChild(totalTr);
+
+    // Update Title with Total Sum (modal shows total, but print header should
+    // present only the document/date without the total amount)
+    const finalTitle = `รายละเอียดรายการ — วันที่ ${dateKey} (ยอดรวม: ${formatCurrency(totalSum)})`;
+    title.innerText = finalTitle;
+    const printHeader = document.getElementById('printDateReportHeader');
+    if (printHeader) printHeader.innerText = `เอกสารจ่ายประจำวันที่: ${dateKey}`;
+
+    modal.classList.remove('hidden');
+};
+
+// Export date detail to PDF
+const exportDatePDF = () => {
+    const now = new Date();
+    const docId = `PAY-${now.getTime().toString().slice(-6)}`;
+    const dateStr = now.toLocaleString('th-TH');
+
+    const printDocId = document.getElementById('printDateDocId');
+    const printIssueDate = document.getElementById('printDateIssueDate');
+
+    if (printDocId) printDocId.innerText = docId;
+    if (printIssueDate) printIssueDate.innerText = dateStr;
+
+    window.print();
 };
 
 // Start application

@@ -187,6 +187,67 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Date Summary Section -->
+            <section class="date-summary-section">
+                <div class="date-summary-header">
+                    <div class="date-summary-title">
+                        <i class='bx bx-calendar-check'></i>
+                        <h3>รวมจำนวนเงินตามวันที่ทำเอกสารจ่าย</h3>
+                    </div>
+                    <div class="date-summary-filters">
+                        <div class="date-filter-group">
+                            <label for="payDocStatusFilter">สถานะ</label>
+                            <select id="payDocStatusFilter">
+                                <option value="all">ทั้งหมด</option>
+                                <option value="รอโอน" selected>รอโอน</option>
+                                <option value="จ่ายแล้ว">จ่ายแล้ว</option>
+                                <option value="ตัดลูกหนี้">ตัดลูกหนี้</option>
+                                <option value="ยกเลิก">ยกเลิก</option>
+                                <option value="ตัดบัตรเครดิต">ตัดบัตรเครดิต</option>
+                                <option value="หักบัญชีแล้ว">หักบัญชีแล้ว</option>
+                                <option value="ตัดเช็คผ่าน">ตัดเช็คผ่าน</option>
+                                <option value="คืนกรรมการ">คืนกรรมการ</option>
+                            </select>
+                        </div>
+                        <div class="date-filter-group">
+                            <label for="payDocMonthFilter">เดือน</label>
+                            <select id="payDocMonthFilter">
+                                <option value="all">ทั้งหมด</option>
+                                <option value="ม.ค.">มกราคม (ม.ค.)</option>
+                                <option value="ก.พ.">กุมภาพันธ์ (ก.พ.)</option>
+                                <option value="มี.ค.">มีนาคม (มี.ค.)</option>
+                                <option value="เม.ย.">เมษายน (เม.ย.)</option>
+                                <option value="พ.ค.">พฤษภาคม (พ.ค.)</option>
+                                <option value="มิ.ย.">มิถุนายน (มิ.ย.)</option>
+                                <option value="ก.ค.">กรกฎาคม (ก.ค.)</option>
+                                <option value="ส.ค.">สิงหาคม (ส.ค.)</option>
+                                <option value="ก.ย.">กันยายน (ก.ย.)</option>
+                                <option value="ต.ค.">ตุลาคม (ต.ค.)</option>
+                                <option value="พ.ย.">พฤศจิกายน (พ.ย.)</option>
+                                <option value="ธ.ค.">ธันวาคม (ธ.ค.)</option>
+                            </select>
+                        </div>
+                        <div class="date-filter-group">
+                            <label for="payDocYearFilter">ปี</label>
+                            <select id="payDocYearFilter">
+                                <option value="all">ทั้งหมด</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="date-summary-grid" id="dateSummaryGrid">
+                    <!-- JS populated date cards -->
+                    <div class="date-summary-empty">
+                        <i class='bx bx-data'></i>
+                        <p>กำลังโหลดข้อมูล...</p>
+                    </div>
+                </div>
+            </section>
         </main>
 
     </div>
@@ -213,6 +274,85 @@
         </div>
     </div>
 
+    <!-- Date Detail Modal (outside dashboard-container for printing) -->
+    <div id="dateDetailModal" class="modal hidden">
+        <div class="modal-content table-modal">
+            <span class="close-date-detail-btn close-btn">&times;</span>
+            <h2 id="dateDetailModalTitle" style="margin-bottom: 24px; color: var(--text-main); border-left: 4px solid var(--accent-primary); padding-left: 15px;">รายละเอียดวันที่</h2>
+            
+            <!-- Print branding for date detail -->
+            <div class="print-branding-header">
+                <div class="branding-main">
+                    <div class="branding-logo">
+                        <i class='bx bxl-codepen'></i>
+                        <h1>THAI DRILL DATA ANALYTICS <span class="report-badge">Expense Dashboard</span></h1>
+                    </div>
+                </div>
+                <div class="branding-meta">
+                    <p>เลขที่เอกสาร: <span id="printDateDocId">PAY-XXXXXX</span></p>
+                    <p>ออกรายงานเมื่อ: <span id="printDateIssueDate">DD/MM/YYYY</span></p>
+                </div>
+            </div>
+            
+            <div id="printDateReportHeader" class="print-report-header-only">เอกสารจ่ายประจำวันที่: -</div>
+            <!-- Combined Print Report Container: Table + Footer + Signatures -->
+            <div class="print-report-container">
+                <!-- Main Data Table -->
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>เลขที่เอกสาร</th>
+                                <th>เจ้าหนี้</th>
+                                <th>รายละเอียด</th>
+                                <th>หมวดหมู่</th>
+                                <th>สถานะ</th>
+                                <th style="text-align: right; white-space: nowrap;">จำนวนเงิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dateDetailTableBody">
+                            <!-- JS generated rows -->
+                        </tbody>
+                        <tfoot id="dateDetailTableFooter">
+                            <!-- JS generated summary row -->
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Print Footer Section: Always Stays Together -->
+                <div class="print-footer-block">
+                    <!-- Print Signature Area (Professional Grid) -->
+                    <div class="print-signature-area">
+                        <div class="print-signature-grid">
+                            <div class="signature-box">
+                                <p class="title">ผู้จัดทำ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                            <div class="signature-box">
+                                <p class="title">ผู้ตรวจสอบ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                            <div class="signature-box">
+                                <p class="title">ผู้อนุมัติ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="exportDatePdfBtn" class="pdf-btn-luxury">
+                    <i class='bx bxs-file-pdf'></i> บันทึกเอกสารจ่ายเป็น PDF
+                </button>
+                <button id="closeDateDetailModalBtn" class="premium-btn" style="width: auto; min-width: 160px; justify-content: center;">ย่อหน้าต่างกลับ</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Details/Data Table Modal -->
     <div id="detailsModal" class="modal hidden">
         <div class="modal-content table-modal">
@@ -224,7 +364,7 @@
                 <div class="branding-main">
                     <div class="branding-logo">
                         <i class='bx bxl-codepen'></i>
-                        <h1>THAI DRILL DATA ANALYTICS</h1>
+                        <h1>THAI DRILL DATA ANALYTICS <span class="report-badge">Expense Dashboard</span></h1>
                     </div>
                 </div>
                 <div class="branding-meta">
@@ -234,25 +374,54 @@
             </div>
             
             <div id="printReportHeader" class="print-report-header-only">ประเภทรายงาน: -</div>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>เลขที่เอกสาร</th>
-                            <th>เจ้าหนี้</th>
-                            <th>รายละเอียด</th>
-                            <th>หมวดหมู่</th>
-                            <th>วันครบกำหนด</th>
-                            <th style="text-align: right; white-space: nowrap;">จำนวนเงิน</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailsTableBody">
-                        <!-- JS generated rows -->
-                    </tbody>
-                    <tfoot id="detailsTableFooter">
-                        <!-- JS generated summary row -->
-                    </tfoot>
-                </table>
+            
+            <!-- Combined Print Report Container: Table + Footer + Signatures -->
+            <div class="print-report-container">
+                <!-- Main Data Table -->
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>เลขที่เอกสาร</th>
+                                <th>เจ้าหนี้</th>
+                                <th>รายละเอียด</th>
+                                <th>หมวดหมู่</th>
+                                <th>วันครบกำหนด</th>
+                                <th style="text-align: right; white-space: nowrap;">จำนวนเงิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailsTableBody">
+                            <!-- JS generated rows -->
+                        </tbody>
+                        <tfoot id="detailsTableFooter">
+                            <!-- JS generated summary row -->
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Print Footer Section: Always Stays Together -->
+                <div class="print-footer-block">
+                    <!-- Print Signature Area (Professional Grid) -->
+                    <div class="print-signature-area">
+                        <div class="print-signature-grid">
+                            <div class="signature-box">
+                                <p class="title">ผู้จัดทำ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                            <div class="signature-box">
+                                <p class="title">ผู้ตรวจสอบ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                            <div class="signature-box">
+                                <p class="title">ผู้อนุมัติ</p>
+                                <div class="signature-line"></div>
+                                <p class="date">ลงชื่อ วันที่ ___ / ___ / _____</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button id="exportPdfBtn" class="pdf-btn-luxury">

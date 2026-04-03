@@ -79,6 +79,29 @@ function doGet(e) {
         if (!monthDue) monthDue = row[15].trim();
         if (!yearDue) yearDue = row[16].trim();
 
+        // แยก วัน/เดือน/ปี จากคอลัมน์ H (row[7]) = วันที่ทำเอกสารจ่าย
+        let payDocDay = '', payDocMonth = '', payDocYear = '';
+        const payDocDateStr = row[7].trim();
+
+        if (payDocDateStr.includes('/') || payDocDateStr.includes('-')) {
+          const pSep = payDocDateStr.includes('/') ? '/' : '-';
+          const pParts = payDocDateStr.split(pSep);
+          
+          if (pParts.length === 3) {
+            if (pParts[0].length <= 2) {
+                payDocDay = pParts[0].padStart(2, '0');
+                const pMIdx = parseInt(pParts[1]) - 1;
+                payDocMonth = TH_MONTHS[pMIdx] || '';
+                payDocYear = pParts[2];
+            } else {
+                payDocYear = pParts[0];
+                const pMIdx = parseInt(pParts[1]) - 1;
+                payDocMonth = TH_MONTHS[pMIdx] || '';
+                payDocDay = pParts[2].padStart(2, '0');
+            }
+          }
+        }
+
         jsonData.push({
             creditor: row[1].trim(),
             description: row[2].trim(),
@@ -89,12 +112,21 @@ function doGet(e) {
             status: row[13].trim(),
             dayDue,
             monthDue,
-            yearDue
+            yearDue,
+            payDocDay,
+            payDocMonth,
+            payDocYear
         });
     }
 
     const result = JSON.stringify({ status: 'success', data: jsonData });
-    cache.put(CACHE_KEY, result, CACHE_DURATION);
+    
+    // พยายามเก็บ cache, ถ้าข้อมูลใหญ่เกิน 100KB ก็ข้ามไป
+    try {
+      cache.put(CACHE_KEY, result, CACHE_DURATION);
+    } catch (cacheError) {
+      // ข้อมูลใหญ่เกินไปสำหรับ cache — ไม่เป็นไร ทำงานต่อได้
+    }
     
     return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
     
