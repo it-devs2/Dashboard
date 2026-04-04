@@ -111,6 +111,26 @@
                         <option value="ลิสซิ่ง">ลิสซิ่ง</option>
                     </select>
                 </div>
+                <!-- Overdue Range Filter -->
+                <div class="filter-group header-overdue">
+                    <label for="overdueRangeFilter">ระยะเวลาเกินกำหนด</label>
+                    <div class="search-box overdue-box" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="search-icon"><i class='bx bx-calendar-exclamation'></i></span>
+                        <div id="selectedOverdueChips" class="selected-chips" hidden></div>
+                        <input type="text" id="overdueRangeFilter" class="search-input" readonly
+                            placeholder="ทุกระยะเวลา...">
+                        <button type="button" class="search-clear overdue-clear" aria-label="ล้างการเลือก" hidden>✕</button>
+                    </div>
+                    <div id="overdueDropdown" class="creditor-dropdown" hidden>
+                        <div class="creditor-dropdown-header">
+                            <strong>เลือกช่วงวันเกินกำหนด</strong>
+                            <button type="button" class="clear-overdue-btn">ล้าง</button>
+                        </div>
+                        <div id="overdueListPanel" class="creditor-list">
+                            <!-- JS populated ranges -->
+                        </div>
+                    </div>
+                </div>
                 <div class="filter-group">
                     <label for="dayFilter">วัน</label>
                     <select id="dayFilter">
@@ -146,6 +166,8 @@
                         <option value="2027">2027</option>
                     </select>
                 </div>
+            </div>
+            <div class="refresh-container">
                 <button id="refreshBtn" class="premium-btn"><i class='bx bx-refresh'></i> โหลดใหม่</button>
             </div>
         </header>
@@ -392,6 +414,7 @@
                                 <th>รายละเอียด</th>
                                 <th>หมวดหมู่</th>
                                 <th>สถานะ</th>
+                                <th style="text-align: center;">ระยะเวลา (วัน)</th>
                                 <th style="text-align: right; white-space: nowrap;">จำนวนเงิน</th>
                             </tr>
                         </thead>
@@ -489,6 +512,7 @@
                                 <th>รายละเอียด</th>
                                 <th>หมวดหมู่</th>
                                 <th class="th-split">วันครบ<br>กำหนด</th>
+                                <th style="text-align: center;">ระยะเวลา (วัน)</th>
                                 <th style="text-align: right; white-space: nowrap;">จำนวนเงิน</th>
                             </tr>
                         </thead>

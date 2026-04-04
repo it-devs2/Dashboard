@@ -200,6 +200,7 @@ h3 {
     width: 100%;
     align-items: center;
     justify-content: center;
+    margin-bottom: 8px;
 }
 
 .filter-group {
@@ -220,7 +221,7 @@ h3 {
     border-radius: 10px;
     font-size: 13.5px;
     line-height: 1.4;
-    min-width: 110px;
+    min-width: 90px;
 }
 
 select {
@@ -343,8 +344,8 @@ select option {
 }
 
 .filter-group.header-search .search-box {
-    min-width: 320px;
-    max-width: 520px;
+    min-width: 200px;
+    max-width: 380px;
     padding: 10px 14px;
     border-radius: 14px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
@@ -383,6 +384,170 @@ select option {
 .selected-chips .chip .chip-remove {
     font-weight: 700;
     margin-left: 6px;
+}
+
+/* Overdue Range filter specific styling - PREMIUM UI */
+.filter-group.header-overdue {
+    position: relative;
+}
+
+.filter-group.header-overdue .search-box {
+    min-width: 160px;
+    max-width: 280px;
+    cursor: pointer;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filter-group.header-overdue .search-input {
+    cursor: pointer;
+    width: 100%;
+}
+
+.filter-group.header-overdue .creditor-dropdown {
+    width: 480px;
+    left: 0;
+    background: rgba(15, 15, 25, 0.95);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 12px;
+}
+
+.creditor-dropdown-header strong {
+    font-size: 15px;
+    background: linear-gradient(90deg, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+}
+
+.clear-overdue-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    padding: 5px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clear-overdue-btn:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+#overdueListPanel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 6px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Custom Checkbox Design */
+.overdue-item-custom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.overdue-item-custom:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.25);
+    transform: translateY(-1px);
+}
+
+.overdue-item-custom input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-visual {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(148, 163, 184, 0.4);
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.overdue-item-custom input[type="checkbox"]:checked + .checkbox-visual {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+.overdue-item-custom input[type="checkbox"]:checked + .checkbox-visual::after {
+    content: '\eb7a'; /* check icon */
+    font-family: 'boxicons';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1.1);
+    font-size: 14px;
+    color: white;
+}
+
+.overdue-label-text {
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Custom Scrollbar */
+#overdueListPanel::-webkit-scrollbar {
+    width: 4px;
+}
+#overdueListPanel::-webkit-scrollbar-track {
+    background: transparent;
+}
+#overdueListPanel::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+}
+#overdueListPanel::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+.refresh-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 20px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+#refreshBtn {
+    min-width: 180px;
+    justify-content: center;
+}
+
+@media (max-width: 760px) {
+    .filter-group.header-overdue .creditor-dropdown {
+        width: 280px;
+        left: auto;
+        right: 0;
+    }
+    #overdueListPanel {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Advanced Search & Filter component */

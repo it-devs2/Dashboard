@@ -110,6 +110,7 @@ function doGet(e) {
             paymentStatus: row[9].trim(),
             category: row[12].trim(),
             status: row[13].trim(),
+            overdueDays: parseFloat(row[10].replace(/[^0-9.-]/g, '')) || 0,
             dayDue,
             monthDue,
             yearDue,

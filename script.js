@@ -2,7 +2,7 @@
  * ==== การเชื่อมต่อ GOOGLE SHEETS ====
  * ให้คุณใส่ URL ของ Web App จาก Google Apps Script ตรงนี้
  */
-const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw68A2PsALFfdpSvnVTDMm7GQNJ8A0y9gSFZ11CwGMbPqRMYiIcBLSK1jMbV9UdDmbZ/exec';
+const GOOGLE_APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlT9ZOGKz4RgD3Np19SRAVOTNOAd9C-HGbsUFA-F2g-GGU5Th5zpwP2mYnEf4pI7Xe/exec';
 
 
 // ตัวแปรเก็บข้อมูลทั้งหมดจาก Google Sheets
@@ -14,6 +14,20 @@ let barChart;
 // Creditor dropdown data + selection state
 let creditorData = [];
 let selectedCreditors = new Set();
+let selectedOverdueRanges = new Set();
+let overdueRanges = [
+    { label: '1-30', min: 1, max: 30 },
+    { label: '31-60', min: 31, max: 60 },
+    { label: '61-90', min: 61, max: 90 },
+    { label: '91-120', min: 91, max: 120 },
+    { label: '121-150', min: 121, max: 150 },
+    { label: '151-180', min: 151, max: 180 },
+    { label: '181-210', min: 181, max: 210 },
+    { label: '211-240', min: 211, max: 240 },
+    { label: '241-270', min: 241, max: 270 },
+    { label: '271-300', min: 271, max: 300 },
+    { label: '301-330', min: 301, max: 330 }
+];
 let currentModalDate = ''; // Store date for PDF report header
 
 // Thai month mapping for sorting and comparison
@@ -120,8 +134,10 @@ const init = async () => {
 
     if (GOOGLE_APP_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
         document.getElementById('setupModal').classList.remove('hidden');
+        renderOverdueDropdown(); // Populate ranges
         loadMockData();
     } else {
+        renderOverdueDropdown(); // Populate ranges
         await fetchData();
     }
 };
@@ -135,7 +151,7 @@ function populateGroupedDetailsTable(items = []) {
     const detailsTableFooter = document.getElementById('detailsTableFooter');
     const table = detailsTableBody ? detailsTableBody.closest('table') : null;
     const detailsTableHeader = table ? table.querySelector('thead') : null;
-    
+
     // Change Table Header for Summary View
     if (detailsTableHeader) {
         detailsTableHeader.innerHTML = `
@@ -216,6 +232,7 @@ function populateDetailsTable(items = []) {
                 <th style="text-align: left;">รายละเอียด</th>
                 <th style="text-align: left;">หมวดหมู่</th>
                 <th style="text-align: left;">วันครบ<br>กำหนด</th>
+                <th style="text-align: center;">ระยะเวลา (วัน)</th>
                 <th style="text-align: right;">จำนวนเงิน</th>
             </tr>
         `;
@@ -249,7 +266,7 @@ function populateDetailsTable(items = []) {
 
     let totalSum = 0;
     if (!items || items.length === 0) {
-        detailsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับตัวกรองนี้</td></tr>`;
+        detailsTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับตัวกรองนี้</td></tr>`;
     } else {
         items.forEach(item => {
             const amount = Number(item.amount) || 0;
@@ -272,6 +289,7 @@ function populateDetailsTable(items = []) {
                     <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
                 </td>
                 <td class="due-date-cell">${dueDateStr}</td>
+                <td style="text-align: center; font-variant-numeric: tabular-nums;">${item.overdueDays || '0'}</td>
                 <td style="text-align: right; color: var(--color-total); font-weight: 600; white-space: nowrap;">${formatCurrency(amount)}</td>
             `;
             detailsTableBody.appendChild(tr);
@@ -282,7 +300,7 @@ function populateDetailsTable(items = []) {
     const totalTr = document.createElement('tr');
     totalTr.className = 'total-row-summary';
     totalTr.innerHTML = `
-        <td colspan="5" class="total-label">ยอดรวมทั้งหมด (Total):</td>
+        <td colspan="6" class="total-label">ยอดรวมทั้งหมด (Total):</td>
         <td class="total-amount-val">${formatCurrency(totalSum)}</td>
     `;
     detailsTableFooter.appendChild(totalTr);
@@ -490,7 +508,43 @@ const setupEventListeners = () => {
             if (headerSearch && !headerSearch.contains(e.target)) {
                 closeCreditorDropdown();
             }
+            const headerOverdue = document.querySelector('.header-overdue');
+            if (headerOverdue && !headerOverdue.contains(e.target)) {
+                closeOverdueDropdown();
+            }
         });
+    }
+
+    // Overdue Range Filter Setup
+    const overdueRangeFilter = document.getElementById('overdueRangeFilter');
+    if (overdueRangeFilter) {
+        overdueRangeFilter.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dd = document.getElementById('overdueDropdown');
+            if (dd) dd.hidden = !dd.hidden;
+            updateHeaderSpacing();
+        });
+
+        const clearOverdueBtn = document.querySelector('.clear-overdue-btn');
+        if (clearOverdueBtn) {
+            clearOverdueBtn.addEventListener('click', () => {
+                selectedOverdueRanges.clear();
+                document.querySelectorAll('#overdueListPanel .overdue-checkbox').forEach(cb => cb.checked = false);
+                updateSelectedOverdueChips();
+                updateDashboard({ skipDateSummary: true });
+            });
+        }
+
+        const overdueClearBtn = document.querySelector('.overdue-clear');
+        if (overdueClearBtn) {
+            overdueClearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedOverdueRanges.clear();
+                document.querySelectorAll('#overdueListPanel .overdue-checkbox').forEach(cb => cb.checked = false);
+                updateSelectedOverdueChips();
+                updateDashboard({ skipDateSummary: true });
+            });
+        }
     }
 
     // PayDoc date section filters (independent)
@@ -1028,8 +1082,102 @@ function closeCreditorDropdown() {
     updateHeaderSpacing();
 }
 
+// ---- Overdue Range dropdown helpers ----
+function renderOverdueDropdown() {
+    const panel = document.getElementById('overdueListPanel');
+    if (!panel) return;
+    panel.innerHTML = '';
+
+    const frag = document.createDocumentFragment();
+    overdueRanges.forEach((rng, idx) => {
+        const label = document.createElement('label');
+        label.className = 'creditor-item';
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'overdue-checkbox';
+        chk.dataset.label = rng.label;
+        chk.id = `overdue_chk_${idx}`;
+        if (selectedOverdueRanges.has(rng.label)) chk.checked = true;
+
+        const span = document.createElement('span');
+        span.className = 'creditor-name';
+        span.textContent = rng.label + ' วัน';
+
+        label.appendChild(chk);
+        label.appendChild(span);
+        frag.appendChild(label);
+    });
+    panel.appendChild(frag);
+
+    // wire checkbox change events
+    panel.querySelectorAll('.overdue-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const lbl = e.target.dataset.label;
+            if (e.target.checked) selectedOverdueRanges.add(lbl);
+            else selectedOverdueRanges.delete(lbl);
+            updateSelectedOverdueChips();
+            updateDashboard({ skipDateSummary: true });
+        });
+    });
+}
+
+function updateSelectedOverdueChips() {
+    const container = document.getElementById('selectedOverdueChips');
+    const input = document.getElementById('overdueRangeFilter');
+    const clearBtn = document.querySelector('.overdue-clear');
+
+    if (!container || !input) return;
+    container.innerHTML = '';
+
+    if (selectedOverdueRanges.size === 0) {
+        container.hidden = true;
+        input.placeholder = "ทุกระยะเวลา...";
+        if (clearBtn) clearBtn.hidden = true;
+        return;
+    }
+
+    container.hidden = false;
+    input.placeholder = ""; // hide placeholder when chips are present
+    if (clearBtn) clearBtn.hidden = false;
+
+    selectedOverdueRanges.forEach(label => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        const text = document.createElement('span');
+        text.className = 'chip-name';
+        text.textContent = label;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-remove';
+        btn.textContent = '✕';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedOverdueRanges.delete(label);
+            const allChecks = Array.from(document.querySelectorAll('.overdue-checkbox'));
+            const match = allChecks.find(c => c.dataset.label === label);
+            if (match) match.checked = false;
+            updateSelectedOverdueChips();
+            updateDashboard({ skipDateSummary: true });
+        });
+        chip.appendChild(text);
+        chip.appendChild(btn);
+        container.appendChild(chip);
+    });
+}
+
+function closeOverdueDropdown() {
+    const dd = document.getElementById('overdueDropdown');
+    if (dd) dd.hidden = true;
+    updateHeaderSpacing();
+}
+
 function updateHeaderSpacing() {
-    const panels = [document.getElementById('creditorDropdown'), document.getElementById('advFilterPanel')].filter(Boolean);
+    const panels = [
+        document.getElementById('creditorDropdown'),
+        document.getElementById('advFilterPanel'),
+        document.getElementById('overdueDropdown')
+    ].filter(Boolean);
     const topNav = document.querySelector('.top-nav');
     if (!topNav) return;
     window.requestAnimationFrame(() => {
@@ -1069,7 +1217,21 @@ const updateDashboard = (opts = {}) => {
         } else {
             matchCreditor = creditorVal === '' || (item.creditor && item.creditor.toLowerCase().includes(creditorVal));
         }
-        return matchPaymentStatus && matchCategory && matchDay && matchMonth && matchYear && matchCreditor;
+
+        let matchOverdue = true;
+        if (selectedOverdueRanges.size > 0) {
+            matchOverdue = false;
+            const days = parseFloat(item.overdueDays) || 0;
+            for (let rangeLabel of selectedOverdueRanges) {
+                const rng = overdueRanges.find(r => r.label === rangeLabel);
+                if (rng && days >= rng.min && days <= rng.max) {
+                    matchOverdue = true;
+                    break;
+                }
+            }
+        }
+
+        return matchPaymentStatus && matchCategory && matchDay && matchMonth && matchYear && matchCreditor && matchOverdue;
     });
 
     // Calculate Summary numbers
@@ -1358,7 +1520,7 @@ const openDateDetailModal = (dateKey) => {
     let totalSum = 0;
 
     if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับวันที่นี้</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับวันที่นี้</td></tr>`;
     } else {
         items.forEach(item => {
             const amount = Number(item.amount) || 0;
@@ -1381,6 +1543,7 @@ const openDateDetailModal = (dateKey) => {
                     <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
                 </td>
                 <td class="due-date-cell">${dueDateStr}</td>
+                <td style="text-align: center; font-variant-numeric: tabular-nums;">${item.overdueDays || '0'}</td>
                 <td style="text-align: right; color: var(--color-total); font-weight: 600; white-space: nowrap;">${formatCurrency(amount)}</td>
             `;
             tbody.appendChild(tr);
@@ -1391,7 +1554,7 @@ const openDateDetailModal = (dateKey) => {
     const totalTr = document.createElement('tr');
     totalTr.className = 'total-row-summary';
     totalTr.innerHTML = `
-        <td colspan="5" class="total-label">ยอดรวมทั้งหมด (Total):</td>
+        <td colspan="6" class="total-label">ยอดรวมทั้งหมด (Total):</td>
         <td class="total-amount-val">${formatCurrency(totalSum)}</td>
     `;
     tfoot.appendChild(totalTr);
@@ -1423,7 +1586,7 @@ const exportDatePDF = () => {
     if (printIssueDate) printIssueDate.innerText = dateStr;
     if (printDocIdDate) printDocIdDate.innerText = docId;
     if (printIssueDateDate) printIssueDateDate.innerText = dateStr;
-    
+
     // Set Transaction Date into the main Title label
     if (dateReportTitle) {
         dateReportTitle.innerText = `สรุปรายการเบิกจ่ายประจำวันที่: ${currentModalDate}`;
@@ -1454,7 +1617,7 @@ const exportToPDF = () => {
     if (printIssueDate) printIssueDate.innerText = dateStr;
     if (printDocIdDetails) printDocIdDetails.innerText = docId;
     if (printIssueDateDetails) printIssueDateDetails.innerText = dateStr;
-    
+
     // Sync report type to local header
     const globalHeader = document.getElementById('printReportHeaderGlobal');
     if (globalHeader && localHeader) {
