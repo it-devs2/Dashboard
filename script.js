@@ -1375,29 +1375,23 @@ const openDateDetailModal = (dateKey) => {
 const exportDatePDF = () => {
     const now = new Date();
     const docId = `PAY-${now.getTime().toString().slice(-6)}`;
-    
-    // Create timestamp string: combine box date with current time
-    let dateStr = currentModalDate || formatThaiDateTime(now);
-    
-    // Append current time to the box date for a complete "Issued At" metadata
-    if (currentModalDate) {
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        // If the dateKey has year in 2026 format, convert to 2569 (BE) if intended
-        // Here we just keep the box date as is and add the time
-        dateStr = `${currentModalDate} ${hh}:${mm}:${ss}`;
-    }
+    const dateStr = formatThaiDateTime(now); // Restore: actual current print time
 
     const printDocId = document.getElementById('printDocIdGlobal');
     const printIssueDate = document.getElementById('printIssueDateGlobal');
     const printDocIdDate = document.getElementById('printDocIdDate');
     const printIssueDateDate = document.getElementById('printIssueDateDate');
+    const dateReportTitle = document.getElementById('printDateReportTitle');
 
     if (printDocId) printDocId.innerText = docId;
     if (printIssueDate) printIssueDate.innerText = dateStr;
     if (printDocIdDate) printDocIdDate.innerText = docId;
     if (printIssueDateDate) printIssueDateDate.innerText = dateStr;
+    
+    // Set Transaction Date into the main Title label
+    if (dateReportTitle) {
+        dateReportTitle.innerText = `สรุปรายการเบิกจ่ายประจำวันที่: ${currentModalDate}`;
+    }
 
     // Use native print for better multi-page support and Thai fonts
     window.print();
