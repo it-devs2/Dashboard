@@ -159,13 +159,40 @@ h3 {
 @keyframes fadeInDown {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-20px) scale(0.98);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
+}
+
+@keyframes entrance {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes shimmerEffect {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+
+@keyframes cardGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.1); }
+    50% { box-shadow: 0 0 35px rgba(99, 102, 241, 0.25); }
+}
+
+@keyframes updateFlash {
+    0% { opacity: 0.5; transform: scale(0.99); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 .logo {
@@ -1116,7 +1143,7 @@ select option {
     color: var(--text-muted);
 }
 
-/* Make the 'ยังไม่ถึงกำหนด' card amount right-aligned and closer to the card edge */
+/* Make the '犧｢犧ｱ犧�ｹ�ｸ｡犹謂ｸ籾ｸｶ犧�ｸ≒ｸｳ犧ｫ犧吭ｸ�' card amount right-aligned and closer to the card edge */
 .summary-layout .card-notdue {
     padding-right: 18px;
     /* slightly reduce right padding so number sits nearer the edge */
@@ -1392,9 +1419,9 @@ select option {
 }
 
 .date-card:hover {
-    transform: translateY(-3px) scale(1.01);
-    box-shadow: 0 14px 24px rgba(63, 72, 161, 0.28), 0 6px 8px rgba(25, 28, 45, 0.4);
-    border-color: rgba(143, 148, 255, 0.5);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 15px rgba(88, 101, 242, 0.2);
+    border-color: rgba(143, 148, 255, 0.6);
 }
 
 .date-card-top {
@@ -2003,7 +2030,7 @@ select option {
     backdrop-filter: blur(8px);
 }
 
-/* Two-line header variant (e.g., "วันครบ\nกำหนด") */
+/* Two-line header variant (e.g., "犧ｧ犧ｱ犧吭ｸ�ｸ｣犧喀n犧≒ｸｳ犧ｫ犧吭ｸ�") */
 .data-table th.th-split {
     white-space: normal;
     text-align: center;
@@ -2059,12 +2086,15 @@ select option {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 8px;
+    table-layout: fixed;
 }
 
 .print-summary-table th,
 .print-summary-table td {
     padding: 6px 8px;
     border: 1px solid #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .print-summary-table thead th {
@@ -2080,16 +2110,21 @@ select option {
 
 .print-summary-table tbody td:first-child {
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .print-summary-table tbody td:nth-child(2) {
     text-align: center;
-    width: 110px;
+    width: 80px;
+    white-space: nowrap;
 }
 
 .print-summary-table tbody td:nth-child(3) {
     text-align: right;
     width: 150px;
+    white-space: nowrap;
 }
 
 .print-global-header-section {
@@ -2207,37 +2242,42 @@ select option {
     background: rgba(139, 92, 246, 0.08);
 }
 
-/* Column width hints so fixed table layout can distribute space and allow wrapping */
+/* กำหนดความกว้างของคอลัมน์ในหน้าจอ (Desktop/Standard) ให้ครบ 7 คอลัมน์ */
 .data-table th:nth-child(1),
 .data-table td:nth-child(1) {
-    width: 9%;
+    width: 8%;
 }
 
 .data-table th:nth-child(2),
 .data-table td:nth-child(2) {
-    width: 16%;
+    width: 14%;
 }
 
 .data-table th:nth-child(3),
 .data-table td:nth-child(3) {
-    width: 35%;
+    width: 20%;
 }
 
 .data-table th:nth-child(4),
 .data-table td:nth-child(4) {
-    width: 10%;
+    width: 11%;
 }
 
 .data-table th:nth-child(5),
 .data-table td:nth-child(5) {
-    width: 15%;
+    width: 13%;
 }
 
 .data-table th:nth-child(6),
 .data-table td:nth-child(6) {
-    width: 15%;
-    min-width: 140px;
-    text-align: right;
+    width: 14%;
+    text-align: center !important;
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+    width: 20%;
+    text-align: right !important;
     white-space: nowrap !important;
 }
 
@@ -2248,17 +2288,17 @@ select option {
 
     .data-table th:nth-child(1),
     .data-table td:nth-child(1) {
-        width: 12%;
+        width: 10%;
     }
 
     .data-table th:nth-child(2),
     .data-table td:nth-child(2) {
-        width: 20%;
+        width: 12%;
     }
 
     .data-table th:nth-child(3),
     .data-table td:nth-child(3) {
-        width: 40%;
+        width: 15%; /* รายละเอียดบนมือถือให้แคบลง */
     }
 
     .data-table th:nth-child(4),
@@ -2268,12 +2308,18 @@ select option {
 
     .data-table th:nth-child(5),
     .data-table td:nth-child(5) {
-        width: 12%;
+        width: 13%;
     }
 
     .data-table th:nth-child(6),
     .data-table td:nth-child(6) {
-        width: 8%;
+        width: 12%;
+    }
+
+    .data-table th:nth-child(7),
+    .data-table td:nth-child(7) {
+        width: 28%; /* ให้ความสำคัญกับยอดเงินบนมือถือ */
+        text-align: right !important;
     }
 
     .modal-content.table-modal {
@@ -2429,7 +2475,7 @@ select option {
         order: -1;
     }
 
-    /* วงกลมไปอยู่บนสุด */
+    /* 犧ｧ犧�ｸ≒ｸ･犧｡犹�ｸ巵ｸｭ犧｢犧ｹ犹謂ｸ壟ｸ吭ｸｪ犧ｸ犧� */
     .cards-column {
         flex-direction: row;
         flex-wrap: wrap;
@@ -2549,7 +2595,7 @@ select option {
 /* Total Row Summary */
 .total-row-summary {
     background: #0f172a !important;
-    /* พื้นหลังสีเข้มแบบในรูป */
+    /* 犧樅ｸｷ犹霞ｸ吭ｸｫ犧･犧ｱ犧�ｸｪ犧ｵ犹犧もｹ霞ｸ｡犹≒ｸ壟ｸ壟ｹ�ｸ吭ｸ｣犧ｹ犧� */
     border-top: 1px solid rgba(99, 102, 241, 0.4) !important;
 }
 
@@ -2586,10 +2632,10 @@ select option {
 }
 
 /* ======================================================
-   PRINT STYLES (ระดับ Luxury Business Report)
+   PRINT STYLES (犧｣犧ｰ犧扉ｸｱ犧� Luxury Business Report)
    ====================================================== */
 
-/* ซ่อนองค์ประกอบที่ใช้สำหรับพิมพ์เท่านั้น เมื่อแสดงบนหน้าจอ */
+/* 犧金ｹ謂ｸｭ犧吭ｸｭ犧�ｸ�ｹ呉ｸ巵ｸ｣犧ｰ犧≒ｸｭ犧壟ｸ伶ｸｵ犹謂ｹ�ｸ癌ｹ霞ｸｪ犧ｳ犧ｫ犧｣犧ｱ犧壟ｸ樅ｸｴ犧｡犧樅ｹ呉ｹ犧伶ｹ謂ｸｲ犧吭ｸｱ犹霞ｸ� 犹犧｡犧ｷ犹謂ｸｭ犹≒ｸｪ犧扉ｸ�ｸ壟ｸ吭ｸｫ犧吭ｹ霞ｸｲ犧謂ｸｭ */
 .print-report-header-only,
 .print-branding-header {
     display: none;
@@ -2643,7 +2689,7 @@ select option {
         pointer-events: none !important;
     }
 
-    /* ซ่อนทุกอย่างบนหน้าจอที่ไม่ใช่ตารางรายงาน */
+    /* 犧金ｹ謂ｸｭ犧吭ｸ伶ｸｸ犧≒ｸｭ犧｢犹謂ｸｲ犧�ｸ壟ｸ吭ｸｫ犧吭ｹ霞ｸｲ犧謂ｸｭ犧伶ｸｵ犹謂ｹ�ｸ｡犹謂ｹ�ｸ癌ｹ謂ｸ歩ｸｲ犧｣犧ｲ犧�ｸ｣犧ｲ犧｢犧�ｸｲ犧� */
     /* CRITICAL: Entirely remove normal dashboard elements from the layout flow in print */
     .dashboard-container,
     .sidebar,
@@ -2736,7 +2782,7 @@ select option {
     }
 
     /* ============================================
-       หัวรายงานแบบ Luxury (Flexbox - ไม่ชนกัน)
+       犧ｫ犧ｱ犧ｧ犧｣犧ｲ犧｢犧�ｸｲ犧吭ｹ≒ｸ壟ｸ� Luxury (Flexbox - 犹�ｸ｡犹謂ｸ癌ｸ吭ｸ≒ｸｱ犧�)
        ============================================ */
     .print-premium-bar {
         display: block !important;
@@ -2866,7 +2912,7 @@ select option {
     }
 
     /* ============================================
-       ตารางแบบ Compact สำหรับข้อมูลเยอะ
+       犧歩ｸｲ犧｣犧ｲ犧�ｹ≒ｸ壟ｸ� Compact 犧ｪ犧ｳ犧ｫ犧｣犧ｱ犧壟ｸもｹ霞ｸｭ犧｡犧ｹ犧･犹犧｢犧ｭ犧ｰ
        ============================================ */
     .table-responsive {
         overflow: visible !important;
@@ -2894,46 +2940,86 @@ select option {
         font-size: 11pt !important;
     }
 
-    /* กำหนดความกว้างแต่ละคอลัมน์ให้พอดี A4 แนวตั้ง (6 คอลัมน์) */
-    .data-table th:nth-child(1),
-    .data-table td:nth-child(1) {
-        width: 13%;
+    /* 犧≒ｸｳ犧ｫ犧吭ｸ扉ｸ�ｸｧ犧ｲ犧｡犧≒ｸｧ犹霞ｸｲ犧�ｹ≒ｸ歩ｹ謂ｸ･犧ｰ犧�ｸｭ犧･犧ｱ犧｡犧吭ｹ呉ｹ�ｸｫ犹霞ｸ樅ｸｭ犧扉ｸｵ A4 犹≒ｸ吭ｸｧ犧歩ｸｱ犹霞ｸ� (6 犧�ｸｭ犧･犧ｱ犧｡犧吭ｹ�) */
+    /* ปรับปรุงความกว้างของคอลัมน์สำหรับการพิมพ์ ให้ครบทั้ง 7 คอลัมน์ */
+    /* ปรับปรุงสัดส่วนคอลัมน์สำหรับการพิมพ์ เพื่อให้ชื่อเจ้าหนี้และรายละเอียดมีพื้นที่เพียงพอ */
+    /* ปรับปรุงสัดส่วนคอลัมน์สำหรับการพิมพ์ เพื่อความสวยงามและเว้นช่องไฟให้เหมาะสม */
+    .data-table:not(.grouped-mode) th:nth-child(1),
+    .data-table:not(.grouped-mode) td:nth-child(1) {
+        width: 10% !important; /* เลขที่เอกสาร (ID) - slightly narrower */
+        white-space: nowrap !important;
     }
 
-    .data-table th:nth-child(2),
-    .data-table td:nth-child(2) {
-        width: 18%;
+    .data-table:not(.grouped-mode) th:nth-child(2),
+    .data-table:not(.grouped-mode) td:nth-child(2) {
+        width: 17% !important; /* เจ้าหนี้ (ชื่อบริษัท) */
+        word-break: break-word !important;
     }
 
-    .data-table th:nth-child(3),
-    .data-table td:nth-child(3) {
-        /* Slightly reduce description column to free space for amounts */
-        width: 25%;
+    .data-table:not(.grouped-mode) th:nth-child(3),
+    .data-table:not(.grouped-mode) td:nth-child(3) {
+        width: 26% !important; /* รายละเอียด - WIDENED since category is hidden */
+        word-break: break-word !important;
     }
 
-    .data-table th:nth-child(4),
-    .data-table td:nth-child(4) {
-        width: 14%;
+    .data-table:not(.grouped-mode) th:nth-child(4),
+    .data-table:not(.grouped-mode) td:nth-child(4) {
+        display: none !important; /* หมวดหมู่ - HIDDEN in PDF as requested */
     }
 
-    .data-table th:nth-child(5),
-    .data-table td:nth-child(5) {
-        width: 12%;
+    .data-table:not(.grouped-mode) th:nth-child(5),
+    .data-table:not(.grouped-mode) td:nth-child(5) {
+        width: 15% !important; /* วันที่ครบกำหนดชำระ */
+        text-align: center !important;
+        white-space: normal !important;
+        word-break: break-word !important;
     }
 
-    .data-table th:nth-child(6),
-    .data-table td:nth-child(6) {
-        /* Increase amount column to accommodate large currency values */
-        width: 18%;
-        text-align: right;
+    .data-table:not(.grouped-mode) th:nth-child(6),
+    .data-table:not(.grouped-mode) td:nth-child(6) {
+        width: 10% !important; /* เกินกำหนด */
+        text-align: center !important;
+        white-space: nowrap !important;
     }
+
+    .data-table:not(.grouped-mode) th:nth-child(7),
+    .data-table:not(.grouped-mode) td:nth-child(7) {
+        width: 22% !important; /* จำนวนเงิน - WIDENED for large numbers */
+        text-align: right !important;
+        white-space: nowrap !important;
+        padding-right: 8px !important;
+    }
+
+    /* Print styling rules specifically for Grouped Mode (3 columns) */
+    .data-table.grouped-mode th:nth-child(1),
+    .data-table.grouped-mode tbody td:nth-child(1) {
+        width: 60% !important; 
+        text-align: left !important;
+        word-break: break-word !important;
+    }
+
+    .data-table.grouped-mode th:nth-child(2),
+    .data-table.grouped-mode tbody td:nth-child(2) {
+        width: 12% !important; 
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+
+    .data-table.grouped-mode th:nth-child(3),
+    .data-table.grouped-mode tbody td:nth-child(3) {
+        width: 28% !important; /* MATCHED with JS */
+        text-align: right !important;
+        white-space: nowrap !important;
+        padding-right: 8px !important;
+    }
+
 
     .data-table th {
         background-color: #f1f5f9 !important;
         color: #000000 !important;
         border: 1px solid #5b51d8 !important;
-        padding: 12px 8px !important;
-        font-size: 10pt !important;
+        padding: 8px 4px !important;
+        font-size: 9pt !important;
         font-weight: 800 !important;
         text-align: left !important;
         vertical-align: middle !important;
@@ -2946,7 +3032,7 @@ select option {
         print-color-adjust: exact;
     }
 
-    /* ชิดขอบสำหรับคอลัมน์แรก */
+    /* 犧癌ｸｴ犧扉ｸもｸｭ犧壟ｸｪ犧ｳ犧ｫ犧｣犧ｱ犧壟ｸ�ｸｭ犧･犧ｱ犧｡犧吭ｹ呉ｹ≒ｸ｣犧� */
     .data-table th:first-child,
     .data-table td:first-child {
         text-align: left !important;
@@ -3026,30 +3112,48 @@ select option {
         padding-left: 12px !important;
     }
 
-    .total-amount-val {
+    .data-table tfoot td.total-amount-val {
         text-align: right !important;
-        padding-right: 12px !important;
+        padding-right: 8px !important;
+        font-weight: 800 !important;
+        color: #5b21b6 !important;
+        width: 28% !important; /* Explicitly match Column 3 */
+        font-size: 11pt !important;
     }
 
+    /* Specific column alignment for rows */
     .data-table td:nth-child(4),
     .data-table td:nth-child(5) {
         text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    /* Ensure span inside centered td is also centered with breathing room */
+    .data-table td:nth-child(4) span.cat-pill {
+        display: inline-block !important;
+        margin: 0 auto !important;
+        padding: 4pt 8pt !important; /* More breathing room */
+        background-color: #f1f5f9 !important; /* Subtle background for print */
+        border-radius: 4px !important;
+        font-size: 9pt !important; /* Slightly smaller for premium look */
+        color: #334155 !important;
+        border: 0.5pt solid #e2e8f0 !important;
     }
 
     .data-table td:last-child {
         text-align: right !important;
     }
 
-    /* Ensure due-date column (5) stays on one line in print */
+    /* Ensure due-date column (5) has room to wrap in print */
     .data-table th:nth-child(5),
     .data-table td:nth-child(5) {
-        white-space: nowrap !important;
+        white-space: normal !important;
         overflow: visible !important;
-        word-wrap: normal !important;
-        word-break: normal !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
     }
 
-    /* แถวตารางเป็นสีเดียวกัน - ลบการสลับสี */
+    /* 犹≒ｸ籾ｸｧ犧歩ｸｲ犧｣犧ｲ犧�ｹ犧巵ｹ�ｸ吭ｸｪ犧ｵ犹犧扉ｸｵ犧｢犧ｧ犧≒ｸｱ犧� - 犧･犧壟ｸ≒ｸｲ犧｣犧ｪ犧･犧ｱ犧壟ｸｪ犧ｵ */
     .data-table tbody tr:nth-child(odd) td {
         background-color: #fafbfc !important;
     }
@@ -3061,7 +3165,7 @@ select option {
     }
 
     /* ============================================
-       แถวยอดรวม - Enhanced Page Break Protection
+       犹≒ｸ籾ｸｧ犧｢犧ｭ犧扉ｸ｣犧ｧ犧｡ - Enhanced Page Break Protection
        ============================================ */
     .total-row-summary {
         background-color: #f3e8ff !important;
@@ -3105,7 +3209,7 @@ select option {
     }
 
     /* ============================================
-       Footer ลงนามท้ายรายงาน
+       Footer 犧･犧�ｸ吭ｸｲ犧｡犧伶ｹ霞ｸｲ犧｢犧｣犧ｲ犧｢犧�ｸｲ犧�
        ============================================ */
 
     /* ============================================
@@ -3244,26 +3348,22 @@ select option {
         print-color-adjust: exact;
     }
 
-    /* SIGNATURE GRID - 3-Column Balanced Layout */
+    /* SIGNATURE GRID - 3-Column Balanced Layout (Using table for flawless page-break protection) */
     .print-signature-grid {
-        display: flex !important;
-        justify-content: space-around !important;
-        align-items: flex-start !important;
-        gap: 20px !important;
+        display: table !important;
         width: 100% !important;
+        table-layout: fixed !important;
 
         /* Signature grid should stay together */
         page-break-inside: avoid !important;
         break-inside: avoid-page !important;
-
-        /* But allow page break BEFORE if at page bottom */
         page-break-before: auto !important;
     }
 
     /* INDIVIDUAL SIGNATURE BOX - Corporate Format */
     .signature-box {
-        flex: 1 !important;
-        min-width: 0 !important;
+        display: table-cell !important;
+        vertical-align: top !important;
 
         /* Box protection - avoid breaking individual box */
         page-break-inside: avoid !important;
@@ -3271,13 +3371,13 @@ select option {
 
         /* Box styling */
         text-align: center !important;
-        padding: 0 6px !important;
+        padding: 0 15px !important;
     }
 
     /* Title - Signature Role */
     .signature-box p.title {
-        margin: 0 0 45px 0 !important;
-        padding: 0 !important;
+        margin: 0 !important;
+        padding: 0 0 45px 0 !important;
 
         font-family: 'Prompt', sans-serif !important;
         font-size: 10.5pt !important;
@@ -3480,7 +3580,7 @@ select option {
 
 @media print {
 
-    /* บังคับสีพื้นหลังให้มาเต็ม 100% */
+    /* 犧壟ｸｱ犧�ｸ�ｸｱ犧壟ｸｪ犧ｵ犧樅ｸｷ犹霞ｸ吭ｸｫ犧･犧ｱ犧�ｹ�ｸｫ犹霞ｸ｡犧ｲ犹犧歩ｹ�ｸ｡ 100% */
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -3491,15 +3591,23 @@ select option {
         margin: 15mm;
     }
 
-    /* จัดทรงตารางใหม่ให้ดูพรีเมียม */
+    /* 犧謂ｸｱ犧扉ｸ伶ｸ｣犧�ｸ歩ｸｲ犧｣犧ｲ犧�ｹ�ｸｫ犧｡犹謂ｹ�ｸｫ犹霞ｸ扉ｸｹ犧樅ｸ｣犧ｵ犹犧｡犧ｵ犧｢犧｡ */
     .print-summary-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed !important;
         font-family: 'Prompt', sans-serif !important;
         border: 1px solid #cbd5e1 !important;
     }
 
-    /* หัวตาราง: สีม่วงน้ำเงินเข้ม ทรงพลัง */
+    .print-summary-table td:first-child {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+        overflow: hidden !important;
+    }
+
+    /* 犧ｫ犧ｱ犧ｧ犧歩ｸｲ犧｣犧ｲ犧�: 犧ｪ犧ｵ犧｡犹謂ｸｧ犧�ｸ吭ｹ霞ｸｳ犹犧�ｸｴ犧吭ｹ犧もｹ霞ｸ｡ 犧伶ｸ｣犧�ｸ樅ｸ･犧ｱ犧� */
     .print-summary-table th {
         background-color: #4f46e5 !important;
         color: #ffffff !important;
@@ -3508,7 +3616,7 @@ select option {
         border: 1px solid #4f46e5 !important;
     }
 
-    /* แถวข้อมูล: สะอาดตา อ/* บังคับกรอบตารางให้มีแถบเลื่อนบนหน้าจอ (Screen only) */
+    /* 犹≒ｸ籾ｸｧ犧もｹ霞ｸｭ犧｡犧ｹ犧･: 犧ｪ犧ｰ犧ｭ犧ｲ犧扉ｸ歩ｸｲ 犧ｭ/* 犧壟ｸｱ犧�ｸ�ｸｱ犧壟ｸ≒ｸ｣犧ｭ犧壟ｸ歩ｸｲ犧｣犧ｲ犧�ｹ�ｸｫ犹霞ｸ｡犧ｵ犹≒ｸ籾ｸ壟ｹ犧･犧ｷ犹謂ｸｭ犧吭ｸ壟ｸ吭ｸｫ犧吭ｹ霞ｸｲ犧謂ｸｭ (Screen only) */
     @media screen {
         .modal-content.table-modal {
             max-height: 85vh !important;
@@ -3522,18 +3630,18 @@ select option {
             overflow-x: auto !important;
         }
 
-        /* ซ่อนหัวข้อบริษัทตอนอยู่บนหน้าจอ */
+        /* 犧金ｹ謂ｸｭ犧吭ｸｫ犧ｱ犧ｧ犧もｹ霞ｸｭ犧壟ｸ｣犧ｴ犧ｩ犧ｱ犧伶ｸ歩ｸｭ犧吭ｸｭ犧｢犧ｹ犹謂ｸ壟ｸ吭ｸｫ犧吭ｹ霞ｸｲ犧謂ｸｭ */
         .print-report-container::before {
             display: none !important;
         }
     }
 
     /* =========================================
-   คอมโบเซ็ต: ปริ้น PDF สวย, มีหัวข้อ, มีลายเซ็น!
+   犧�ｸｭ犧｡犹もｸ壟ｹ犧金ｹ�ｸ�: 犧巵ｸ｣犧ｴ犹霞ｸ� PDF 犧ｪ犧ｧ犧｢, 犧｡犧ｵ犧ｫ犧ｱ犧ｧ犧もｹ霞ｸｭ, 犧｡犧ｵ犧･犧ｲ犧｢犹犧金ｹ�ｸ�!
    ========================================= */
     @media print {
 
-        /* 1. ซ่อนของกวนใจบนเว็บ */
+        /* 1. 犧金ｹ謂ｸｭ犧吭ｸもｸｭ犧�ｸ≒ｸｧ犧吭ｹ�ｸ謂ｸ壟ｸ吭ｹ犧ｧ犹�ｸ� */
         body:has(.modal:not(.hidden)) .print-global-header-section,
         body:has(.modal:not(.hidden)) .dashboard-container,
         .modal-footer,
@@ -3545,7 +3653,7 @@ select option {
             display: none !important;
         }
 
-        /* 2. ปลดล็อกกรอบ ให้ออกมาเต็มหน้า A4 */
+        /* 2. 犧巵ｸ･犧扉ｸ･犹�ｸｭ犧≒ｸ≒ｸ｣犧ｭ犧� 犹�ｸｫ犹霞ｸｭ犧ｭ犧≒ｸ｡犧ｲ犹犧歩ｹ�ｸ｡犧ｫ犧吭ｹ霞ｸｲ A4 */
         .modal:not(.hidden) {
             position: absolute !important;
             top: 0 !important;
@@ -3563,9 +3671,9 @@ select option {
             padding: 0 !important;
         }
 
-        /* 3. เสกหัวข้อบริษัทแปะติดเหนือตาราง */
+        /* 3. 犹犧ｪ犧≒ｸｫ犧ｱ犧ｧ犧もｹ霞ｸｭ犧壟ｸ｣犧ｴ犧ｩ犧ｱ犧伶ｹ≒ｸ巵ｸｰ犧歩ｸｴ犧扉ｹ犧ｫ犧吭ｸｷ犧ｭ犧歩ｸｲ犧｣犧ｲ犧� */
         .print-report-container::before {
-            content: "❖ THAI DRILL DATA ANALYTICS Expense Dashboard ❖";
+            content: "笶� THAI DRILL DATA ANALYTICS Expense Dashboard 笶�";
             display: block !important;
             text-align: center !important;
             font-family: 'Prompt', sans-serif !important;
@@ -3578,7 +3686,7 @@ select option {
             border-bottom: 3.5px solid #4f46e5 !important;
         }
 
-        /* 4. เปิดช่องเซ็นชื่อด้านล่าง (ห้ามขาดครึ่งหน้า) */
+        /* 4. 犹犧巵ｸｴ犧扉ｸ癌ｹ謂ｸｭ犧�ｹ犧金ｹ�ｸ吭ｸ癌ｸｷ犹謂ｸｭ犧扉ｹ霞ｸｲ犧吭ｸ･犹謂ｸｲ犧� (犧ｫ犹霞ｸｲ犧｡犧もｸｲ犧扉ｸ�ｸ｣犧ｶ犹謂ｸ�ｸｫ犧吭ｹ霞ｸｲ) */
         .print-signature-area {
             display: block !important;
             margin-top: 60px !important;
@@ -3627,30 +3735,30 @@ select option {
 
 }
 
-/* ซ่อนหัวเดดิมของ Modal เพื่อให้หัวข้อบริษัทเด่นที่สุด */
+/* 犧金ｹ謂ｸｭ犧吭ｸｫ犧ｱ犧ｧ犹犧扉ｸ扉ｸｴ犧｡犧もｸｭ犧� Modal 犹犧樅ｸｷ犹謂ｸｭ犹�ｸｫ犹霞ｸｫ犧ｱ犧ｧ犧もｹ霞ｸｭ犧壟ｸ｣犧ｴ犧ｩ犧ｱ犧伶ｹ犧扉ｹ謂ｸ吭ｸ伶ｸｵ犹謂ｸｪ犧ｸ犧� */
 #detailsModalTitle,
 #dateDetailModalTitle,
 .modal-content>h2 {
     display: none !important;
 }
 
-/* หัวข้อบริษัท: แสดงทั้งบนหน้าจอและตอนปริ้น */
+/* 犧ｫ犧ｱ犧ｧ犧もｹ霞ｸｭ犧壟ｸ｣犧ｴ犧ｩ犧ｱ犧�: 犹≒ｸｪ犧扉ｸ�ｸ伶ｸｱ犹霞ｸ�ｸ壟ｸ吭ｸｫ犧吭ｹ霞ｸｲ犧謂ｸｭ犹≒ｸ･犧ｰ犧歩ｸｭ犧吭ｸ巵ｸ｣犧ｴ犹霞ｸ� */
 .print-report-container::before {
-    content: "❖ THAI DRILL DATA ANALYTICS Expense Dashboard ❖";
+    content: "笶� THAI DRILL DATA ANALYTICS Expense Dashboard 笶�";
     display: block !important;
     text-align: center !important;
     font-family: 'Prompt', sans-serif !important;
     font-size: 20px !important;
     font-weight: 800 !important;
     color: rgba(255, 255, 255, 0.45) !important;
-    /* สีจางๆ แบบมินิมอลตามรูป */
+    /* 犧ｪ犧ｵ犧謂ｸｲ犧�ｹ� 犹≒ｸ壟ｸ壟ｸ｡犧ｴ犧吭ｸｴ犧｡犧ｭ犧･犧歩ｸｲ犧｡犧｣犧ｹ犧� */
     letter-spacing: 1px;
     margin: 15px 0 25px 0 !important;
     padding-bottom: 20px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* ปรับแต่งส่วนท้ายตาราง (Total Row) ให้เด่นชัด */
+/* 犧巵ｸ｣犧ｱ犧壟ｹ≒ｸ歩ｹ謂ｸ�ｸｪ犹謂ｸｧ犧吭ｸ伶ｹ霞ｸｲ犧｢犧歩ｸｲ犧｣犧ｲ犧� (Total Row) 犹�ｸｫ犹霞ｹ犧扉ｹ謂ｸ吭ｸ癌ｸｱ犧� */
 .data-table tfoot .total-row-summary {
     background: rgba(99, 102, 241, 0.08) !important;
     border-top: 1px solid rgba(99, 102, 241, 0.2) !important;
@@ -3667,17 +3775,17 @@ select option {
 }
 
 /* =========================================
-   เซ็ตจบ: ปริ้น PDF ยาวทะลุจอ + มีหัวข้อ + มีที่เซ็น!
+   犹犧金ｹ�ｸ歩ｸ謂ｸ�: 犧巵ｸ｣犧ｴ犹霞ｸ� PDF 犧｢犧ｲ犧ｧ犧伶ｸｰ犧･犧ｸ犧謂ｸｭ + 犧｡犧ｵ犧ｫ犧ｱ犧ｧ犧もｹ霞ｸｭ + 犧｡犧ｵ犧伶ｸｵ犹謂ｹ犧金ｹ�ｸ�!
    ========================================= */
 @media print {
 
-    /* 1. ซ่อนของกวนใจบนเว็บ */
+    /* 1. 犧金ｹ謂ｸｭ犧吭ｸもｸｭ犧�ｸ≒ｸｧ犧吭ｹ�ｸ謂ｸ壟ｸ吭ｹ犧ｧ犹�ｸ� */
     body:has(.modal:not(.hidden)) .print-global-header-section,
     body:has(.modal:not(.hidden)) .dashboard-container {
         display: none !important;
     }
 
-    /* 2. ปลดล็อคกรอบ ให้ออกมาเต็มหน้า A4 */
+    /* 2. 犧巵ｸ･犧扉ｸ･犹�ｸｭ犧�ｸ≒ｸ｣犧ｭ犧� 犹�ｸｫ犹霞ｸｭ犧ｭ犧≒ｸ｡犧ｲ犹犧歩ｹ�ｸ｡犧ｫ犧吭ｹ霞ｸｲ A4 */
     .modal:not(.hidden) {
         position: absolute !important;
         top: 0 !important;
@@ -3695,73 +3803,45 @@ select option {
         padding: 0 !important;
     }
 
-    /* 3. ท่าไม้ตายเสกหัวข้อ! (เอา h2 ตัวเดิมมาแปลงร่าง) */
-    #detailsModalTitle,
-    #dateDetailModalTitle {
-        display: block !important;
-        text-align: center !important;
-        border-left: none !important;
-        padding-left: 0 !important;
-        margin-top: 15px !important;
-        margin-bottom: 25px !important;
-        padding-bottom: 15px !important;
-        border-bottom: 3px solid #4f46e5 !important;
-        font-size: 0 !important;
-        /* ซ่อนคำว่า 'รายละเอียดรายการ' เดิม */
-    }
-
-    /* พิมพ์ชื่อบริษัทเข้าไปใหม่ให้หรูหรา */
-    #detailsModalTitle::after,
-    #dateDetailModalTitle::after {
-        content: "❖ THAI DRILL DATA ANALYTICS Expense Dashboard ❖";
-        display: block !important;
-        font-family: 'Prompt', sans-serif !important;
-        font-size: 24px !important;
-        font-weight: 800 !important;
-        color: #1e293b !important;
-        /* ถ้าติ๊ก Background graphics จะเป็นสีน้ำเงินเข้ม */
-    }
-
-    /* 4. เปิดช่องเซ็นชื่อด้านล่าง */
-    .print-signature-area {
-        display: block !important;
-        margin-top: 50px !important;
-        page-break-inside: avoid !important;
-    }
-
-    .print-signature-grid {
-        display: flex !important;
-        justify-content: space-around !important;
-        text-align: center !important;
-        gap: 20px !important;
-    }
-
-    .signature-box {
-        flex: 1;
-        color: #1e293b !important;
-    }
-
-    .signature-box p.title {
-        font-weight: 800 !important;
-        margin-bottom: 50px !important;
-    }
-
-    .signature-line {
-        border-bottom: 1px solid #1e293b !important;
-        margin-bottom: 10px !important;
-        width: 80% !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
-    .signature-box p.date {
-        font-size: 12px !important;
-    }
-
-    /* 5. ซ่อนปุ่มกดยกเลิกตอนปริ้น */
+    /* 3. 犧伶ｹ謂ｸｲ犹�ｸ｡犹霞ｸ歩ｸｲ犧｢犹犧ｪ犧≒ｸｫ犧ｱ犧ｧ犧もｹ霞ｸｭ! (犹犧ｭ犧ｲ h2 �    /* 5. 犧金ｹ謂ｸｭ犧吭ｸ巵ｸｸ犹謂ｸ｡犧≒ｸ扉ｸ｢犧≒ｹ犧･犧ｴ犧≒ｸ歩ｸｭ犧吭ｸ巵ｸ｣犧ｴ犹霞ｸ� */
     .modal-footer,
     .close-btn,
     .details-controls {
         display: none !important;
     }
+}
+
+/* =========================================
+   PREMIUM WEB ANIMATIONS
+   ========================================= */
+.card {
+    animation: entrance 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Staggered entry delays */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+.card:nth-child(5) { animation-delay: 0.5s; }
+
+.card-total-circle {
+    animation-delay: 0.15s !important;
+}
+
+.dashboard-updating .card {
+    animation: updateFlash 0.5s ease-out;
+}
+
+.details-modal-content {
+    animation: entrance 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.loading-shimmer {
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.01) 25%, 
+        rgba(255,255,255,0.05) 50%, 
+        rgba(255,255,255,0.01) 75%);
+    background-size: 800px 100%;
+    animation: shimmerEffect 2s infinite linear;
 }

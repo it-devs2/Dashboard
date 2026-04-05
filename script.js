@@ -152,13 +152,17 @@ function populateGroupedDetailsTable(items = []) {
     const table = detailsTableBody ? detailsTableBody.closest('table') : null;
     const detailsTableHeader = table ? table.querySelector('thead') : null;
 
+    if (table) {
+        table.classList.add('grouped-mode');
+    }
+
     // Change Table Header for Summary View
     if (detailsTableHeader) {
         detailsTableHeader.innerHTML = `
             <tr>
-                <th style="text-align: left; width: 45%;">ชื่อเจ้าหนี้ (Creditor Name)</th>
-                <th style="text-align: left !important; width: 25%;">จำนวนรายการ (Count)</th>
-                <th style="text-align: right; width: 30%;">ยอดเงินรวม (Sum Total)</th>
+                <th style="text-align: left; width: 60%;">ชื่อเจ้าหนี้</th>
+                <th style="text-align: center !important; width: 12%;">จำนวนรายการ</th>
+                <th style="text-align: right; width: 28%;">ยอดเงินรวม</th>
             </tr>
         `;
     }
@@ -171,10 +175,10 @@ function populateGroupedDetailsTable(items = []) {
         return;
     }
 
-    // Aggregate by creditor
+    // Aggregate by docNo (which contains the Name in this spreadsheet)
     const groups = {};
     items.forEach(it => {
-        const key = it.creditor || 'ไม่ระบุชื่อ';
+        const key = it.docNo || 'ไม่ระบุชื่อ'; // Using docNo because it currently holds the Creditor Names
         const amt = Number(it.amount) || 0;
         if (!groups[key]) groups[key] = { total: 0, count: 0 };
         groups[key].total += amt;
@@ -216,12 +220,89 @@ function populateGroupedDetailsTable(items = []) {
     detailsTableFooter.appendChild(totalTr);
 }
 
+// Popluates the newly added Category summary
+function populateCategoryDetailsTable(items = []) {
+    const detailsTableBody = document.getElementById('detailsTableBody');
+    const detailsTableFooter = document.getElementById('detailsTableFooter');
+    const table = detailsTableBody ? detailsTableBody.closest('table') : null;
+    const detailsTableHeader = table ? table.querySelector('thead') : null;
+
+    if (table) {
+        table.classList.add('grouped-mode');
+    }
+
+    if (detailsTableHeader) {
+        detailsTableHeader.innerHTML = `
+            <tr>
+                <th style="text-align: left; width: 60%;">หมวดหมู่</th>
+                <th style="text-align: center !important; width: 12%;">จำนวนรายการ</th>
+                <th style="text-align: right; width: 28%;">ยอดเงินรวม</th>
+            </tr>
+        `;
+    }
+
+    detailsTableBody.innerHTML = '';
+    detailsTableFooter.innerHTML = '';
+
+    if (!items || items.length === 0) {
+        detailsTableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับตัวกรองนี้</td></tr>`;
+        return;
+    }
+
+    // Group items by category instead of creditor
+    const groupMap = {};
+    items.forEach(it => {
+        const key = it.category ? it.category : 'ไม่ระบุหมวดหมู่';
+        if (!groupMap[key]) {
+            groupMap[key] = { count: 0, total: 0, name: key };
+        }
+        groupMap[key].count += 1;
+        groupMap[key].total += (Number(it.amount) || 0);
+    });
+
+    const sortedGroups = Object.values(groupMap)
+        .sort((a, b) => (b.total - a.total) || (b.count - a.count));
+
+    let grandTotal = 0;
+    sortedGroups.forEach(g => {
+        grandTotal += g.total;
+        const tr = document.createElement('tr');
+        tr.className = 'summary-row-clickable';
+        tr.innerHTML = `
+            <td style="text-align: left; font-weight: 700; color: #fff;">${g.name}</td>
+            <td style="text-align: center; color: var(--text-muted);">${g.count} รายการ</td>
+            <td style="text-align: right; color: var(--color-total); font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums;">${formatCurrency(g.total)}</td>
+        `;
+        // Drill-down: Click row to see details for this category
+        tr.addEventListener('click', () => {
+            const catItems = items.filter(it => (it.category || 'ไม่ระบุหมวดหมู่') === g.name);
+            const btnViewItems = document.getElementById('btnViewItems');
+            if (btnViewItems) btnViewItems.click(); // Switch back to items view
+            populateDetailsTable(catItems);
+        });
+        detailsTableBody.appendChild(tr);
+    });
+
+    // Total footer
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-row-summary';
+    totalTr.innerHTML = `
+        <td colspan="2" class="total-label">ยอดยกมาทั้งหมด (${sortedGroups.length} หมวดหมู่):</td>
+        <td class="total-amount-val">${formatCurrency(grandTotal)}</td>
+    `;
+    detailsTableFooter.appendChild(totalTr);
+}
+
 // Populate details table (used by full-list and group-click)
 function populateDetailsTable(items = []) {
     const detailsTableBody = document.getElementById('detailsTableBody');
     const detailsTableFooter = document.getElementById('detailsTableFooter');
     const table = detailsTableBody ? detailsTableBody.closest('table') : null;
     const detailsTableHeader = table ? table.querySelector('thead') : null;
+
+    if (table) {
+        table.classList.remove('grouped-mode');
+    }
 
     // Restore Original Table Header for Detailed View
     if (detailsTableHeader) {
@@ -231,8 +312,8 @@ function populateDetailsTable(items = []) {
                 <th style="text-align: left;">เจ้าหนี้</th>
                 <th style="text-align: left;">รายละเอียด</th>
                 <th style="text-align: left;">หมวดหมู่</th>
-                <th style="text-align: left;">วันครบ<br>กำหนด</th>
-                <th style="text-align: center;">ระยะเวลา (วัน)</th>
+                <th style="text-align: left;">วันที่ครบกำหนดชำระ</th>
+                <th style="text-align: center; white-space: nowrap;">ระยะเวลา</th>
                 <th style="text-align: right;">จำนวนเงิน</th>
             </tr>
         `;
@@ -282,9 +363,9 @@ function populateDetailsTable(items = []) {
             const tr = document.createElement('tr');
             const dueDateStr = [item.dayDue, item.monthDue, item.yearDue].filter(Boolean).join(' ') || '-';
             tr.innerHTML = `
-                <td style="font-weight: 500; color: var(--accent-primary); font-family: monospace;">${item.docNo || '-'}</td>
-                <td style="font-weight: 500;">${item.creditor || '-'}</td>
-                <td style="color: var(--text-muted);">${item.description || '-'}</td>
+                <td style="font-weight: 500; font-family: monospace; color: var(--accent-primary);">${item.creditor || '-'}</td> <!-- ID -->
+                <td style="font-weight: 700; color: #fff;">${item.docNo || '-'}</td> <!-- Name -->
+                <td style="color: var(--text-muted); font-size: 13.5px;">${item.description || '-'}</td>
                 <td>
                     <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
                 </td>
@@ -577,17 +658,13 @@ const setupEventListeners = () => {
         btnViewItems.addEventListener('click', () => {
             btnViewItems.classList.add('is-active');
             btnViewGrouped.classList.remove('is-active');
-            // Show detailed items table
             populateDetailsTable(lastDetailsItems);
             groupSummaryBar.hidden = false;
         });
         btnViewGrouped.addEventListener('click', () => {
             btnViewGrouped.classList.add('is-active');
             btnViewItems.classList.remove('is-active');
-            // Show grouped summary table
             populateGroupedDetailsTable(lastDetailsItems);
-            // Optional: Hide horizontal cards if preferred in grouped mode
-            // groupSummaryBar.hidden = true; 
         });
     }
 
@@ -747,8 +824,12 @@ const openDetailsModal = (type) => {
     const totalSum = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
     const finalTitle = `ประเภทรายงาน: ${config.text} (ยอดรวมทั้งหมด: ${formatCurrency(totalSum)})`;
     detailsModalTitle.innerText = finalTitle;
+    
+    // Append the Category to the Print Header Title if it is not "all"
+    const catVal = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : 'all';
+    const catText = catVal !== 'all' ? ` - ${catVal}` : '';
     const printHeader = document.getElementById('printReportHeaderGlobal');
-    if (printHeader) printHeader.innerText = `ประเภทรายงาน: ${config.text}`;
+    if (printHeader) printHeader.innerText = `ประเภทรายงาน: ${config.text}${catText}`;
 
     detailsModal.classList.remove('hidden');
     // After modal is visible, shrink any long status texts to fit their cells
@@ -1222,11 +1303,16 @@ const updateDashboard = (opts = {}) => {
         if (selectedOverdueRanges.size > 0) {
             matchOverdue = false;
             const days = parseFloat(item.overdueDays) || 0;
-            for (let rangeLabel of selectedOverdueRanges) {
-                const rng = overdueRanges.find(r => r.label === rangeLabel);
-                if (rng && days >= rng.min && days <= rng.max) {
-                    matchOverdue = true;
-                    break;
+
+            // ใช้ค่าสัมบูรณ์ของวัน (ติดลบ) มาเทียบกับช่วงที่กำหนด เช่น -172 จะอยู่ในกลุ่ม 151-180 วัน
+            if (days < 0) {
+                const absDays = Math.abs(days);
+                for (let rangeLabel of selectedOverdueRanges) {
+                    const rng = overdueRanges.find(r => r.label === rangeLabel);
+                    if (rng && absDays >= rng.min && absDays <= rng.max) {
+                        matchOverdue = true;
+                        break;
+                    }
                 }
             }
         }
@@ -1265,12 +1351,12 @@ const updateDashboard = (opts = {}) => {
             early += amount;
         }
 
-        // Group by creditor and track their statuses for the bar chart
-        const creditor = item.creditor ? item.creditor : 'ไม่ระบุชื่อ';
-        if (!creditorSummary[creditor]) {
-            creditorSummary[creditor] = { amount: 0, statuses: new Set() };
+        // Group by creditor Name (stored in item.docNo after column swap) and track their statuses for the bar chart
+        const creditorName = item.docNo ? item.docNo : 'ไม่ระบุชื่อ';
+        if (!creditorSummary[creditorName]) {
+            creditorSummary[creditorName] = { amount: 0, statuses: new Set() };
         }
-        creditorSummary[creditor].amount += amount;
+        creditorSummary[creditorName].amount += amount;
 
         // Map status strings to short readable box names
         let boxName = "อื่น ๆ";
@@ -1281,7 +1367,7 @@ const updateDashboard = (opts = {}) => {
         else if (statusStr.includes('ยังไม่กำหนดวันจ่าย')) boxName = 'ยังไม่กำหนดวันจ่าย';
         else if (statusStr.includes('จ่ายก่อนกำหนด')) boxName = 'จ่ายก่อนกำหนด';
 
-        creditorSummary[creditor].statuses.add(boxName);
+        creditorSummary[creditorName].statuses.add(boxName);
     });
 
     // Total is already calculated in the loop above to include all items correctly
@@ -1536,9 +1622,9 @@ const openDateDetailModal = (dateKey) => {
             const tr = document.createElement('tr');
             const dueDateStr = [item.dayDue, item.monthDue, item.yearDue].filter(Boolean).join(' ') || '-';
             tr.innerHTML = `
-                <td style="font-weight: 500; color: var(--accent-primary); font-family: monospace;">${item.docNo || '-'}</td>
-                <td style="font-weight: 500;">${item.creditor || '-'}</td>
-                <td style="color: var(--text-muted);">${item.description || '-'}</td>
+                <td style="font-weight: 500; font-family: monospace; color: var(--accent-primary);">${item.creditor || '-'}</td> <!-- แสดงรหัส ID -->
+                <td style="font-weight: 700; color: #fff;">${item.docNo || '-'}</td> <!-- แสดงชื่อบริษัท -->
+                <td style="color: var(--text-muted); font-size: 13.5px;">${item.description || '-'}</td>
                 <td>
                     <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
                 </td>
@@ -1688,8 +1774,36 @@ window.addEventListener('resize', () => {
 // Before printing, clear inline font sizes so print CSS can wrap naturally.
 window.addEventListener('beforeprint', () => {
     document.querySelectorAll('.status-text').forEach(el => el.style.fontSize = '');
+    
+    // Adjust colspan for Detailed Table because we hide the Category column (4th) in CSS during print
+    const detailsTotalLabel = document.querySelector('#detailsTableFooter .total-label');
+    if (detailsTotalLabel && detailsTotalLabel.getAttribute('colspan') === '6') {
+        detailsTotalLabel.setAttribute('colspan', '5');
+        detailsTotalLabel.dataset.changedForPrint = 'true';
+    }
+
+    // Adjust colspan for Date Detail Table
+    const dateTotalLabel = document.querySelector('#dateDetailTableFooter .total-label');
+    if (dateTotalLabel && dateTotalLabel.getAttribute('colspan') === '6') {
+        dateTotalLabel.setAttribute('colspan', '5');
+        dateTotalLabel.dataset.changedForPrint = 'true';
+    }
 });
 window.addEventListener('afterprint', () => {
     // restore shrink after printing
     setTimeout(() => shrinkStatusTextToFit(), 80);
+    
+    // Restore colspan for details table
+    const detailsTotalLabel = document.querySelector('#detailsTableFooter .total-label');
+    if (detailsTotalLabel && detailsTotalLabel.dataset.changedForPrint === 'true') {
+        detailsTotalLabel.setAttribute('colspan', '6');
+        delete detailsTotalLabel.dataset.changedForPrint;
+    }
+
+    // Restore colspan for date detail table
+    const dateTotalLabel = document.querySelector('#dateDetailTableFooter .total-label');
+    if (dateTotalLabel && dateTotalLabel.dataset.changedForPrint === 'true') {
+        dateTotalLabel.setAttribute('colspan', '6');
+        delete dateTotalLabel.dataset.changedForPrint;
+    }
 });
