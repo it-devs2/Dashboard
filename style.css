@@ -2946,20 +2946,20 @@ select option {
     /* ปรับปรุงสัดส่วนคอลัมน์สำหรับการพิมพ์ เพื่อความสวยงามและเว้นช่องไฟให้เหมาะสม */
     .data-table:not(.grouped-mode) th:nth-child(1),
     .data-table:not(.grouped-mode) td:nth-child(1) {
-        width: 18% !important; /* เลขที่เอกสาร (ID) - More width + Centered */
+        width: 14% !important; /* เลขที่เอกสาร (ID) - centered */
         text-align: center !important;
         white-space: nowrap !important;
     }
 
     .data-table:not(.grouped-mode) th:nth-child(2),
     .data-table:not(.grouped-mode) td:nth-child(2) {
-        width: 20% !important; /* เจ้าหนี้ (ชื่อบริษัท) */
+        width: 18% !important; /* เจ้าหนี้ (ชื่อบริษัท) */
         word-break: break-word !important;
     }
 
     .data-table:not(.grouped-mode) th:nth-child(3),
     .data-table:not(.grouped-mode) td:nth-child(3) {
-        width: 15% !important; /* รายละเอียด - Reduced for better total balance */
+        width: 25% !important; /* รายละเอียด - WIDENED as requested */
         word-break: break-word !important;
     }
 
@@ -2970,7 +2970,7 @@ select option {
 
     .data-table:not(.grouped-mode) th:nth-child(5),
     .data-table:not(.grouped-mode) td:nth-child(5) {
-        width: 15% !important; /* วันที่ครบกำหนดชำระ */
+        width: 13% !important; /* วันที่ครบกำหนดชำระ */
         text-align: center !important;
         white-space: normal !important;
         word-break: break-word !important;
@@ -2978,7 +2978,7 @@ select option {
 
     .data-table:not(.grouped-mode) th:nth-child(6),
     .data-table:not(.grouped-mode) td:nth-child(6) {
-        width: 10% !important; /* เกินกำหนด */
+        width: 8% !important; /* เกินกำหนด */
         text-align: center !important;
         white-space: nowrap !important;
     }
@@ -3589,7 +3589,7 @@ select option {
 
     @page {
         size: A4;
-        margin: 15mm;
+        margin: 5mm;
     }
 
     /* 犧謂ｸｱ犧扉ｸ伶ｸ｣犧�ｸ歩ｸｲ犧｣犧ｲ犧�ｹ�ｸｫ犧｡犹謂ｹ�ｸｫ犹霞ｸ扉ｸｹ犧樅ｸ｣犧ｵ犹犧｡犧ｵ犧｢犧｡ */
@@ -3731,7 +3731,7 @@ select option {
 
     @page {
         size: A4;
-        margin: 15mm 10mm;
+        margin: 5mm;
     }
 
 }
@@ -3772,7 +3772,7 @@ select option {
 
 @page {
     size: A4;
-    margin: 15mm 10mm;
+    margin: 5mm;
 }
 
 /* =========================================
