@@ -144,11 +144,12 @@ const init = async () => {
 
 // Keep last opened details items for quick re-render/filtering
 let lastDetailsItems = [];
+let lastDateDetailItems = []; // New for Date Detail Modal
 
-// Populate grouped summary table (One row per creditor)
-function populateGroupedDetailsTable(items = []) {
-    const detailsTableBody = document.getElementById('detailsTableBody');
-    const detailsTableFooter = document.getElementById('detailsTableFooter');
+// Populate grouped summary table (One row per creditor) - Simplified to be reusable
+function populateGroupedDetailsTable(items = [], tbodyId = 'detailsTableBody', tfootId = 'detailsTableFooter', btnViewItemsId = 'btnViewItems') {
+    const detailsTableBody = document.getElementById(tbodyId);
+    const detailsTableFooter = document.getElementById(tfootId);
     const table = detailsTableBody ? detailsTableBody.closest('table') : null;
     const detailsTableHeader = table ? table.querySelector('thead') : null;
 
@@ -202,10 +203,9 @@ function populateGroupedDetailsTable(items = []) {
         // Drill-down: Click row to see details for this creditor
         tr.addEventListener('click', () => {
             const creditorItems = items.filter(it => (it.docNo || 'ไม่ระบุชื่อ') === g.name);
-            const btnViewItems = document.getElementById('btnViewItems');
-            const btnViewGrouped = document.getElementById('btnViewGrouped');
+            const btnViewItems = document.getElementById(btnViewItemsId);
             if (btnViewItems) btnViewItems.click(); // Switch back to items view
-            populateDetailsTable(creditorItems);
+            populateDetailsTable(creditorItems, tbodyId, tfootId);
         });
         detailsTableBody.appendChild(tr);
     });
@@ -293,10 +293,10 @@ function populateCategoryDetailsTable(items = []) {
     detailsTableFooter.appendChild(totalTr);
 }
 
-// Populate details table (used by full-list and group-click)
-function populateDetailsTable(items = []) {
-    const detailsTableBody = document.getElementById('detailsTableBody');
-    const detailsTableFooter = document.getElementById('detailsTableFooter');
+// Populate details table (used by full-list and group-click) - Reusable
+function populateDetailsTable(items = [], tbodyId = 'detailsTableBody', tfootId = 'detailsTableFooter') {
+    const detailsTableBody = document.getElementById(tbodyId);
+    const detailsTableFooter = document.getElementById(tfootId);
     const table = detailsTableBody ? detailsTableBody.closest('table') : null;
     const detailsTableHeader = table ? table.querySelector('thead') : null;
 
@@ -390,8 +390,8 @@ function populateDetailsTable(items = []) {
     window.requestAnimationFrame(() => shrinkStatusTextToFit(detailsTableBody));
 }
 
-function renderGroupSummary(items = []) {
-    const bar = document.getElementById('groupSummaryBar');
+function renderGroupSummary(items = [], barId = 'groupSummaryBar', targetTbodyId = 'detailsTableBody', targetTfootId = 'detailsTableFooter', btnViewItemsId = 'btnViewItems') {
+    const bar = document.getElementById(barId);
     if (!bar) return;
     bar.innerHTML = '';
     if (!items || items.length === 0) { bar.hidden = true; return; }
@@ -418,8 +418,9 @@ function renderGroupSummary(items = []) {
     allBtn.type = 'button'; allBtn.className = 'group-card group-card-all';
     allBtn.innerHTML = `<div class="group-card-name">แสดงทั้งหมด</div><div class="group-card-meta"><span class="group-count">${items.length} รายการ</span><span class="group-total">${formatCurrency(items.reduce((s, i) => s + (Number(i.amount) || 0), 0))}</span></div>`;
     allBtn.addEventListener('click', () => {
-        document.querySelectorAll('.group-card').forEach(c => c.classList.remove('is-selected'));
-        populateDetailsTable(lastDetailsItems);
+        document.querySelectorAll(`#${barId} .group-card`).forEach(c => c.classList.remove('is-selected'));
+        const itemsToRender = (barId === 'groupSummaryBarDate') ? lastDateDetailItems : lastDetailsItems;
+        populateDetailsTable(itemsToRender, targetTbodyId, targetTfootId);
     });
     bar.appendChild(allBtn);
 
@@ -429,9 +430,9 @@ function renderGroupSummary(items = []) {
         card.className = 'group-card';
         card.innerHTML = `<div class="group-card-name">${g.name}</div><div class="group-card-meta"><span class="group-count">${g.count} รายการ</span><span class="group-total">${formatCurrency(g.total)}</span></div>`;
         card.addEventListener('click', () => {
-            document.querySelectorAll('.group-card').forEach(c => c.classList.remove('is-selected'));
+            document.querySelectorAll(`#${barId} .group-card`).forEach(c => c.classList.remove('is-selected'));
             card.classList.add('is-selected');
-            populateDetailsTable(g.items);
+            populateDetailsTable(g.items, targetTbodyId, targetTfootId);
         });
         bar.appendChild(card);
     });
@@ -665,6 +666,24 @@ const setupEventListeners = () => {
             btnViewGrouped.classList.add('is-active');
             btnViewItems.classList.remove('is-active');
             populateGroupedDetailsTable(lastDetailsItems);
+        });
+    }
+
+    // Date Detail Modal view toggle
+    const btnDateViewItems = document.getElementById('btnDateViewItems');
+    const btnDateViewGrouped = document.getElementById('btnDateViewGrouped');
+    const groupSummaryBarDate = document.getElementById('groupSummaryBarDate');
+    if (btnDateViewItems && btnDateViewGrouped && groupSummaryBarDate) {
+        btnDateViewItems.addEventListener('click', () => {
+            btnDateViewItems.classList.add('is-active');
+            btnDateViewGrouped.classList.remove('is-active');
+            populateDetailsTable(lastDateDetailItems, 'dateDetailTableBody', 'dateDetailTableFooter');
+            groupSummaryBarDate.hidden = false;
+        });
+        btnDateViewGrouped.addEventListener('click', () => {
+            btnDateViewGrouped.classList.add('is-active');
+            btnDateViewItems.classList.remove('is-active');
+            populateGroupedDetailsTable(lastDateDetailItems, 'dateDetailTableBody', 'dateDetailTableFooter', 'btnDateViewItems');
         });
     }
 
@@ -1571,6 +1590,7 @@ const openDateDetailModal = (dateKey) => {
     const title = document.getElementById('dateDetailModalTitle');
     const tbody = document.getElementById('dateDetailTableBody');
     const tfoot = document.getElementById('dateDetailTableFooter');
+
     // Find matching items by payDoc date (column H) + status filter
     const payDocStatusVal = document.getElementById('payDocStatusFilter')?.value || 'รอโอน';
     const items = allData.filter(item => {
@@ -1600,60 +1620,32 @@ const openDateDetailModal = (dateKey) => {
         return (Number(b.amount) || 0) - (Number(a.amount) || 0);
     });
 
-    tbody.innerHTML = '';
-    tfoot.innerHTML = '';
+    // Save last items for re-render / group interactions
+    lastDateDetailItems = items.slice();
 
-    let totalSum = 0;
-
-    if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 32px; color: var(--text-muted);">ไม่มีข้อมูลสำหรับวันที่นี้</td></tr>`;
-    } else {
-        items.forEach(item => {
-            const amount = Number(item.amount) || 0;
-            totalSum += amount;
-
-            const statusStr = (item.status || '').toString().trim();
-            let statusColor = 'var(--text-muted)';
-            if (statusStr.includes('เกินกำหนด')) statusColor = '#ef4444';
-            else if (statusStr.includes('ตรงดิว')) statusColor = '#10b981';
-            else if (statusStr.includes('ยังไม่ถึงกำหนด')) statusColor = '#3b82f6';
-            else if (statusStr.includes('จ่ายก่อนกำหนด')) statusColor = '#a855f7';
-
-            const tr = document.createElement('tr');
-            const dueDateStr = [item.dayDue, item.monthDue, item.yearDue].filter(Boolean).join(' ') || '-';
-            tr.innerHTML = `
-                <td style="font-weight: 500; font-family: monospace; color: var(--accent-primary);">${item.creditor || '-'}</td> <!-- แสดงรหัส ID -->
-                <td style="font-weight: 700; color: #fff;">${item.docNo || '-'}</td> <!-- แสดงชื่อบริษัท -->
-                <td style="color: var(--text-muted); font-size: 13.5px;">${item.description || '-'}</td>
-                <td>
-                    <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
-                </td>
-                <td class="due-date-cell">${dueDateStr}</td>
-                <td style="text-align: center; font-variant-numeric: tabular-nums;">${item.overdueDays || '0'}</td>
-                <td style="text-align: right; color: var(--color-total); font-weight: 600; white-space: nowrap;">${formatCurrency(amount)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+    // Reset view toggle to 'Items' by default
+    const btnDateViewItems = document.getElementById('btnDateViewItems');
+    const btnDateViewGrouped = document.getElementById('btnDateViewGrouped');
+    if (btnDateViewItems && btnDateViewGrouped) {
+        btnDateViewItems.classList.add('is-active');
+        btnDateViewGrouped.classList.remove('is-active');
     }
 
-    // Total footer
-    const totalTr = document.createElement('tr');
-    totalTr.className = 'total-row-summary';
-    totalTr.innerHTML = `
-        <td colspan="6" class="total-label">ยอดรวมทั้งหมด (Total):</td>
-        <td class="total-amount-val">${formatCurrency(totalSum)}</td>
-    `;
-    tfoot.appendChild(totalTr);
+    // Render grouped summary and full table
+    renderGroupSummary(items, 'groupSummaryBarDate', 'dateDetailTableBody', 'dateDetailTableFooter', 'btnDateViewItems');
+    populateDetailsTable(items, 'dateDetailTableBody', 'dateDetailTableFooter');
 
-    // Update Title with Total Sum (modal shows total, but print header should
-    // present only the document/date without the total amount)
-    const finalTitle = `รายละเอียดรายการ — วันที่ ${dateKey} (ยอดรวม: ${formatCurrency(totalSum)})`;
+    const totalSum = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+    const finalTitle = `รายละเอียดวันที่: ${dateKey} (รายการทั้งหมด: ${items.length}, ยอดรวม: ${formatCurrency(totalSum)})`;
     title.innerText = finalTitle;
-    const printHeader = document.getElementById('printReportHeaderGlobal');
-    if (printHeader) printHeader.innerText = `เอกสารจ่ายประจำวันที่: ${dateKey}`;
+    
+    // For printing
+    const printTitle = document.getElementById('printDateReportTitle');
+    if (printTitle) printTitle.innerText = `สรุปรายการเบิกจ่ายประจำวันที่: ${dateKey}`;
 
-    currentModalDate = dateKey;
     modal.classList.remove('hidden');
+    // After modal is visible, shrink any long status texts to fit their cells
+    window.requestAnimationFrame(() => shrinkStatusTextToFit(tbody));
 };
 
 // Export date detail to PDF

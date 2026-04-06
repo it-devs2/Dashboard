@@ -383,6 +383,13 @@
             <h2 id="dateDetailModalTitle"
                 style="margin-bottom: 24px; color: var(--text-main); border-left: 4px solid var(--accent-primary); padding-left: 15px;">
                 รายละเอียดวันที่</h2>
+            
+            <div class="details-controls">
+                <div class="view-toggle">
+                    <button id="btnDateViewItems" class="seg-btn is-active" aria-pressed="true">รายการ</button>
+                    <button id="btnDateViewGrouped" class="seg-btn" aria-pressed="false">สรุปเจ้าหนี้</button>
+                </div>
+            </div>
 
             <div class="print-report-container">
                 <div class="print-premium-bar"></div>
@@ -405,6 +412,10 @@
                     </div>
                 </div>
                 <div id="printDateReportTitle" class="print-report-title-label">สรุปรายการเบิกจ่ายประจำวัน</div>
+                
+                <!-- Grouped summary (per-creditor) for Date -->
+                <div id="groupSummaryBarDate" class="group-summary-bar" hidden></div>
+
                 <!-- Main Data Table -->
                 <div class="table-responsive">
                     <table class="data-table">
