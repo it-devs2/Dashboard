@@ -201,7 +201,7 @@ function populateGroupedDetailsTable(items = []) {
         `;
         // Drill-down: Click row to see details for this creditor
         tr.addEventListener('click', () => {
-            const creditorItems = items.filter(it => (it.creditor || 'ไม่ระบุชื่อ') === g.name);
+            const creditorItems = items.filter(it => (it.docNo || 'ไม่ระบุชื่อ') === g.name);
             const btnViewItems = document.getElementById('btnViewItems');
             const btnViewGrouped = document.getElementById('btnViewGrouped');
             if (btnViewItems) btnViewItems.click(); // Switch back to items view
@@ -363,8 +363,8 @@ function populateDetailsTable(items = []) {
             const tr = document.createElement('tr');
             const dueDateStr = [item.dayDue, item.monthDue, item.yearDue].filter(Boolean).join(' ') || '-';
             tr.innerHTML = `
-                <td style="font-weight: 500; font-family: monospace; color: var(--accent-primary);">${item.creditor || '-'}</td> <!-- ID -->
-                <td style="font-weight: 700; color: #fff;">${item.docNo || '-'}</td> <!-- Name -->
+                <td style="font-weight: 500; font-family: monospace; color: var(--accent-primary);">${item.creditor || '-'}</td> <!-- Doc No / ID -->
+                <td style="font-weight: 700; color: #fff;">${item.docNo || '-'}</td> <!-- Creditor Name -->
                 <td style="color: var(--text-muted); font-size: 13.5px;">${item.description || '-'}</td>
                 <td>
                     <span class="cat-pill" style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap;">${item.category || '-'}</span>
@@ -399,7 +399,7 @@ function renderGroupSummary(items = []) {
     // aggregate by creditor
     const groups = {};
     items.forEach(it => {
-        const key = it.creditor || 'ไม่ระบุชื่อ';
+        const key = it.docNo || 'ไม่ระบุชื่อ';
         const amt = Number(it.amount) || 0;
         if (!groups[key]) groups[key] = { total: 0, count: 0, items: [] };
         groups[key].total += amt;
@@ -1035,7 +1035,7 @@ const fetchData = async () => {
             allData = result.data;
 
             // Populate Creditor Datalist + custom dropdown
-            const creditors = [...new Set(allData.map(item => item.creditor))].filter(Boolean).sort();
+            const creditors = [...new Set(allData.map(item => item.docNo))].filter(Boolean).sort();
             const datalist = document.getElementById('creditorList');
             if (datalist) {
                 datalist.innerHTML = creditors.map(c => `<option value="${c}">`).join('');
@@ -1294,9 +1294,9 @@ const updateDashboard = (opts = {}) => {
         let matchYear = selectedYear === 'all' || (item.yearDue && parseInt(item.yearDue) === parseInt(selectedYear));
         let matchCreditor;
         if (selectedCreditors && selectedCreditors.size > 0) {
-            matchCreditor = selectedCreditors.has(item.creditor);
+            matchCreditor = selectedCreditors.has(item.docNo);
         } else {
-            matchCreditor = creditorVal === '' || (item.creditor && item.creditor.toLowerCase().includes(creditorVal));
+            matchCreditor = creditorVal === '' || (item.docNo && item.docNo.toLowerCase().includes(creditorVal));
         }
 
         let matchOverdue = true;
@@ -1434,7 +1434,7 @@ const loadMockData = () => {
         ];
 
         // Populate creditor list for mock mode as well
-        const creditors = [...new Set(allData.map(item => item.creditor))].filter(Boolean).sort();
+        const creditors = [...new Set(allData.map(item => item.docNo))].filter(Boolean).sort();
         const datalist = document.getElementById('creditorList');
         if (datalist) datalist.innerHTML = creditors.map(c => `<option value="${c}">`).join('');
         creditorData = creditors;
